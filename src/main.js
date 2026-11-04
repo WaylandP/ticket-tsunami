@@ -4,7 +4,7 @@ import {
   createGame, tick, applyFix, usePower, mostUrgent, multiplier, clock, summary,
   difficultyFor, evaluateAchievements, shiftInsights,
 } from './engine.js';
-import { FIX_ICONS, face, avatar, DEVICE_ART, personSVG } from './icons.js';
+import { FIX_ICONS, POWER_ICONS, face, avatar, personSVG, roomSVG, deskSVG } from './icons.js';
 import { play, setMuted, isMuted, music } from './sound.js';
 
 const $ = (id) => document.getElementById(id);
@@ -12,6 +12,8 @@ const app = $('app');
 const queueEl = $('queue');
 const benchEl = $('bench');
 const floodEl = $('flood');
+$('room-art').innerHTML = roomSVG();
+$('desk-art').innerHTML = deskSVG();
 const screens = { start: $('start-screen'), pause: $('pause-screen'), over: $('over-screen'), stats: $('stats-screen'), shop: $('shop-screen') };
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -31,7 +33,6 @@ const COACH = {
 let selectedId = null; // a ticket the player clicked; otherwise we focus the most urgent
 let last = 0;
 const cards = new Map(); // ticket id -> <li>
-const POWER_EMOJI = { coffee: '☕', kb: '📖', bot: '🤖' };
 
 // --- storage (per-browser convenience only) ----------------------------------
 
@@ -329,7 +330,7 @@ function buildPowers() {
     btn.disabled = true;
     btn.title = p.desc;
     btn.setAttribute('aria-label', `${p.label}: ${p.desc} (key ${p.key.toUpperCase()})`);
-    btn.innerHTML = `<span class="power-emoji" aria-hidden="true">${POWER_EMOJI[p.id]}</span><span class="power-label">${p.label}</span><kbd>${p.key.toUpperCase()}</kbd>`;
+    btn.innerHTML = `<span class="power-emoji" aria-hidden="true">${POWER_ICONS[p.id]}</span><span class="power-label">${p.label}</span><kbd>${p.key.toUpperCase()}</kbd>`;
     btn.addEventListener('click', () => usePowerUI(p.id));
     row.append(btn);
   }
@@ -401,7 +402,7 @@ function startShift(newMode = 'free') {
   cards.clear();
   queueEl.replaceChildren();
   benchEl.replaceChildren();
-  $('bench-wrap').hidden = true;
+  $('bench-wrap').hidden = false;
   selectedId = null;
   const randomSeed = (Date.now() ^ (Math.random() * 1e9)) | 0;
   const opts = { online: onlinePref, perks: ownedPerks() };
@@ -410,8 +411,8 @@ function startShift(newMode = 'free') {
   else if (mode === 'tutorial') game = createGame(randomSeed, DEFAULT_DIFFICULTY, 'tutorial');
   else if (mode === 'endless') game = createGame(randomSeed, difficulty, 'endless', opts);
   else game = createGame(randomSeed, difficulty, 'shift', opts);
-  $('empty-big').textContent = game.online ? 'Inbox zero.' : 'The bench is clear.';
-  $('empty-sub').textContent = game.online ? 'It won’t last.' : 'Someone is already on the way.';
+  $('empty-big').textContent = game.online ? 'Inbox zero.' : 'Walk-ins only.';
+  $('empty-sub').textContent = game.online ? 'It won’t last.' : 'Your next repair is at reception.';
   app.classList.toggle('overtime', mode === 'endless');
   coach(null);
   show('play');
@@ -433,10 +434,11 @@ function goHome() {
   cards.clear();
   queueEl.replaceChildren();
   benchEl.replaceChildren();
-  $('bench-wrap').hidden = true;
+  $('bench-wrap').hidden = false;
   $('empty').hidden = true;
   app.classList.remove('overtime', 'frenzy');
   $('clock').textContent = '9:00 AM';
+  renderRoom(0);
   $('clock-sub').textContent = 'Shift ends at 5:00 PM';
   $('score').textContent = '0';
   $('mult').hidden = true;
@@ -691,6 +693,17 @@ function handleEvents(events) {
 
 // --- rendering ------------------------------------------------------------------
 
+let roomMinute = -1;
+function renderRoom(t) {
+  const minute = Math.floor(9 * 60 + t / SHIFT_MS * 8 * 60);
+  if (minute === roomMinute) return;
+  roomMinute = minute;
+  const hour = (minute / 60) % 24;
+  app.dataset.daylight = hour >= 19 || hour < 6 ? 'night' : hour >= 16 ? 'sunset' : 'day';
+  app.style.setProperty('--clock-hour', `${minute * 0.5}deg`);
+  app.style.setProperty('--clock-minute', `${minute * 6}deg`);
+}
+
 function createCard(ticket) {
   const li = document.createElement('li');
   li.className = 'ticket' + (ticket.vip ? ' vip' : '') + (ticket.kind === 'spam' ? ' spam' : '') + (ticket.kind === 'repair' ? ' visitor' : '');
@@ -746,7 +759,7 @@ function removeCard(id, cls, label) {
   }
   const done = () => el.remove();
   el.addEventListener('animationend', (e) => { if (e.target === el) done(); }, { once: false });
-  setTimeout(done, reduceMotion.matches ? 0 : 700);
+  setTimeout(done, reduceMotion.matches ? 0 : 950);
 }
 
 function render() {
@@ -758,6 +771,8 @@ function render() {
     const left = Math.max(0, 1 - ticket.age / ticket.patience);
     el.style.setProperty('--left', left.toFixed(3));
     el.classList.toggle('urgent', left < 0.35);
+    // Presentation only: patience comes directly from the unchanged engine.
+    el.dataset.mood = left < 0.18 ? 'steaming' : left < 0.35 ? 'tapping' : left < 0.65 ? 'crossed' : 'calm';
     el.classList.toggle('focused', ticket === focus);
     el.querySelector('.ticket-btn').setAttribute('aria-current', ticket === focus ? 'true' : 'false');
     if (ticket.stages) {
@@ -781,6 +796,7 @@ function render() {
 
   // HUD
   $('clock').textContent = clock(game.t);
+  renderRoom(game.t);
   $('clock-sub').textContent = game.t >= SHIFT_MS ? 'Overtime' : 'Shift ends at 5:00 PM';
   $('score').textContent = game.score.toLocaleString();
   const mult = multiplier(game.streak);
@@ -797,8 +813,10 @@ function render() {
 
   const emails = game.tickets.filter((t) => t.kind !== 'repair').length;
   const repairs = game.tickets.length - emails;
-  $('bench-wrap').hidden = repairs === 0;
-  $('empty').hidden = game.tickets.length !== 0 || game.phase !== 'playing';
+  $('bench-wrap').hidden = false;
+  $('bench-wrap').classList.toggle('is-empty', repairs === 0);
+  $('inbox-status').textContent = emails ? `${emails} open · select a ticket` : 'All quiet. Suspicious.';
+  $('empty').hidden = emails !== 0 || game.phase !== 'playing';
   app.classList.toggle('frenzy', game.t < game.frenzyUntil && game.phase === 'playing');
 
   // Power-ups
@@ -931,6 +949,7 @@ $('share-btn').addEventListener('click', async () => {
   }
 });
 
+renderRoom(0);
 buildFixBar();
 buildPips();
 buildFaces();
