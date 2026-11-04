@@ -8,11 +8,14 @@ A network patch cabinet, loaner laptop shelf, city windows and ceiling lights
 establish the office. An open technician workbench replaces the retail counter.
 The established blue/navy palette remains unchanged in both themes.
 
-Larger name-seeded coworkers have shaped faces, hair, collars, rolled sleeves,
+Larger seated, name-seeded coworkers have shaped faces, hair, collars, rolled sleeves,
 ID badges and watches. Devices have differentiated grips, hinges, ports, bezels
 and asset labels. The CEO, Gary, Jules and Frank retain their recognizable looks.
 The player's inbox sits in a thin-bezel monitor above an adjustable arm,
-keyboard, desk mat and mug. Home, office and inspection copy use Internal IT.
+keyboard, desk mat and mug. A continuous bench connects the coworker and player
+workspaces, with cable reels, a tool cup, repair tray and device dock. The home
+illustration composes the same room, coworker and bench functions used in play.
+Home, office and inspection copy use Internal IT.
 
 All game art is original inline SVG and CSS, with no images, SVG IDs, paint-server
 references, dependencies, or build step. The documentation screenshots are real
