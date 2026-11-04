@@ -15,12 +15,16 @@ A box gets checked only when the work is built, tested and visible in the game.
 - [x] Engine test suite running in CI on every push
 - [x] Static deploy on Vercel
 - [x] Three difficulties — Casual Friday, Nine to Five, Monday — harder days pay more, each with its own best score
+- [x] Daily Shift: one seeded shift per day, the same for everyone, one try, shareable result
+- [x] Sound effects, synthesized in the browser (no audio files), with a mute button
+- [x] Special tickets: junk mail (bonus to flag, free to ignore), reopened tickets, fire drills (8s double points)
+- [x] Power-ups: every 10-ticket streak earns a charge for Coffee, Wiki or Auto-reply
+- [x] Ten achievements, earned on the shift report and saved in the browser
 
 ## Next
 
-- [ ] Sound effects with a mute toggle
-- [ ] Daily challenge: everyone plays the same seeded shift
-- [ ] More ticket variety and rare special tickets
+- [ ] Even more ticket variety
 - [ ] A short tutorial first shift
-- [ ] Achievements on the shift report
 - [ ] Installable as an app (PWA) and playable offline
+- [ ] Progress export/import code — move your stats between devices, still no server
+- [ ] Accounts and cloud sync — needs a real backend, which breaks the static-only rule; a deliberate decision for later

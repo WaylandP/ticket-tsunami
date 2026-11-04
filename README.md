@@ -26,7 +26,17 @@ swinging in overtime.
   your score, and VIP tickets pay double.
 - The wrong fix burns the user's patience. Let a ticket time out or the queue
   overflow and someone gets unhappy. Five unhappy users and your shift is over.
-- **↑/↓** change which ticket you're working, **P** or **Esc** pauses.
+- Watch for **junk mail**: closing a scam with "Not an IT problem" pays 1.5x,
+  and letting it time out costs nothing. Some closed tickets **come back**
+  ("RE: …"), and when something catches fire, points double for 8 seconds.
+- Every 10-ticket streak earns a **power charge**. Spend it on ☕ Coffee
+  (**Q**, slows everything for 5s), 📖 Wiki (**W**, reveals every fix) or
+  🤖 Auto-reply (**E**, closes the most urgent ticket).
+- The **Daily Shift** is the same seeded storm for everyone, once a day, one
+  try — copy your result and compare.
+- Ten **achievements** to unlock, shown on the shift report.
+- **↑/↓** change which ticket you're working, **P** or **Esc** pauses, and the
+  speaker button mutes the (synthesized, dependency-free) sound.
 
 Works with keyboard, mouse or touch, on phones and desktops, in light and
 dark mode.
@@ -62,6 +72,7 @@ CI runs the same tests on every push.
 | `src/main.js` | Rendering, input and animation; the only file that touches the DOM |
 | `src/tickets.js` | Every ticket in the game, each with exactly one right fix |
 | `src/icons.js` | Inline SVG icons |
+| `src/sound.js` | All sound, synthesized with WebAudio — no audio files |
 | `src/styles.css` | All styling: layout, themes, animation |
 | `test/engine.test.js` | Engine test suite (`node --test`) |
 
