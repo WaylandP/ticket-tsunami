@@ -194,6 +194,7 @@ kbd {
 
 .hud-label {
   display: block;
+  margin: 0;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -937,21 +938,88 @@ kbd {
   color: var(--muted);
 }
 
-/* mode buttons: Daily and Night Shift side by side */
+/* --- the start screen: a few small tiles, not one tall card -------------------- */
 
-.mode-row {
+.overlay-start { padding: 16px; }
+
+/* On phones the start screen takes the whole viewport — the dimmed HUD and
+   fix bar behind it earn nothing at this size — and the tiles tighten up. */
+@media (max-width: 859px) {
+  .overlay-start { position: fixed; padding: 12px; }
+  .start-layout { gap: 10px; }
+  .tile { padding: 13px 15px; gap: 8px; }
+  .hero-tile { padding: 16px; }
+  .hero-tile .title { font-size: clamp(34px, 10.5vw, 56px); }
+  .hero-tile .lede { font-size: 15px; }
+  .howto { gap: 8px; }
+  .howto li { font-size: 13px; }
+  .btn-mode { min-height: 56px; }
+  .radio-tile {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 10px;
+  }
+  .music-btn { min-height: 34px; font-size: 11px; }
+  .diff-blurb { font-size: 12px; }
+}
+
+.start-layout {
+  margin: auto;
+  width: min(880px, 100%);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* side by side on wide screens: hero on the left, everything else stacked right */
+@media (min-width: 860px) {
+  .start-layout {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    grid-template-areas:
+      'hero howto'
+      'hero modes'
+      'hero radio'
+      'links links';
+    align-items: stretch;
+  }
+  .hero-tile  { grid-area: hero; align-self: stretch; justify-content: center; }
+  .howto-tile { grid-area: howto; }
+  .mode-tiles { grid-area: modes; }
+  .radio-tile { grid-area: radio; }
+  .start-layout .links-row { grid-area: links; }
+}
+
+.tile {
+  margin: 0;
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 16px;
+  gap: 10px;
+}
+
+.hero-tile { padding: 22px 20px; display: grid; }
+
+.howto-tile, .radio-tile { text-align: left; }
+
+.mode-tiles {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 12px;
 }
+
+/* mode buttons: Daily and Night Shift as their own tiles */
 
 .btn-mode {
   display: grid;
-  gap: 2px;
-  min-height: 58px;
-  padding: 9px 10px;
+  gap: 3px;
+  min-height: 64px;
   font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
 }
+
+.btn-mode:hover { border-color: var(--accent); }
 
 .mode-title { font-weight: 700; }
 
@@ -1007,6 +1075,8 @@ kbd {
   gap: 10px;
   font-size: 13px;
 }
+
+.overlay-start .links-row { padding-bottom: 4px; }
 
 .links-row .dot { color: var(--muted); }
 

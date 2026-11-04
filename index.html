@@ -57,42 +57,51 @@
     </div>
     <ol class="queue" id="queue" aria-label="Open tickets"></ol>
 
-    <section class="overlay" id="start-screen" aria-labelledby="start-title">
-      <div class="card start-card">
-        <p class="eyebrow">A help desk survival game</p>
-        <h1 id="start-title" class="title">Ticket<br>Tsunami</h1>
-        <p class="lede">It’s 9 AM. You’re the only one on the help desk. The tickets are coming.</p>
-        <ul class="howto">
-          <li><span class="howto-key">1–5</span><span>Read the ticket at the top of the pile and pick the fix that solves it.</span></li>
-          <li><span class="howto-key">Fast</span><span>Faster fixes and streaks score more. VIP tickets score double.</span></li>
-          <li><span class="howto-key">Don’t</span><span>let tickets time out or the queue overflow. Five unhappy users and you’re done.</span></li>
-        </ul>
-        <div class="diff-wrap">
-          <p class="hud-label" id="diff-label">Pick your day</p>
-          <div class="diff" id="diff" role="group" aria-labelledby="diff-label"></div>
-          <p class="diff-blurb" id="diff-blurb"></p>
+    <section class="overlay overlay-start" id="start-screen" aria-labelledby="start-title">
+      <div class="start-layout">
+        <div class="card tile hero-tile">
+          <p class="eyebrow">A help desk survival game</p>
+          <h1 id="start-title" class="title">Ticket<br>Tsunami</h1>
+          <p class="lede">It’s 9 AM. You’re the only one on the help desk. The tickets are coming.</p>
+          <div class="diff-wrap">
+            <p class="hud-label" id="diff-label">Pick your day</p>
+            <div class="diff" id="diff" role="group" aria-labelledby="diff-label"></div>
+            <p class="diff-blurb" id="diff-blurb"></p>
+          </div>
+          <button type="button" class="btn btn-primary" id="start-btn">Start shift</button>
+          <p class="best" id="best-line" hidden></p>
         </div>
-        <button type="button" class="btn btn-primary" id="start-btn">Start shift</button>
-        <div class="mode-row">
-          <button type="button" class="btn btn-ghost btn-mode" id="daily-btn">
+
+        <div class="card tile howto-tile">
+          <p class="hud-label">How it works</p>
+          <ul class="howto">
+            <li><span class="howto-key">1–5</span><span>Read the ticket at the top of the pile and pick the fix that solves it.</span></li>
+            <li><span class="howto-key">Fast</span><span>Faster fixes and streaks score more. VIP tickets score double.</span></li>
+            <li><span class="howto-key">Don’t</span><span>let tickets time out or the queue overflow. Five unhappy users and you’re done.</span></li>
+          </ul>
+        </div>
+
+        <div class="mode-tiles">
+          <button type="button" class="card tile btn-mode" id="daily-btn">
             <span class="mode-title">🌊 Daily · <span id="daily-date"></span></span>
             <span class="mode-sub" id="daily-sub">Same storm for everyone. One try.</span>
           </button>
-          <button type="button" class="btn btn-ghost btn-mode" id="endless-btn">
+          <button type="button" class="card tile btn-mode" id="endless-btn">
             <span class="mode-title">🌙 Night Shift</span>
             <span class="mode-sub">Start at 5 PM. Survive.</span>
           </button>
         </div>
-        <div class="music-wrap">
+
+        <div class="card tile radio-tile">
           <p class="hud-label" id="music-label">Lofi radio</p>
           <div class="music" id="music" role="group" aria-labelledby="music-label"></div>
         </div>
+
         <p class="links-row">
           <button type="button" class="btn-link" id="tutorial-btn">First day? Take the training</button>
           <span class="dot" aria-hidden="true">·</span>
           <button type="button" class="btn-link" id="stats-btn">Your career</button>
         </p>
-        <p class="best" id="best-line" hidden></p>
       </div>
     </section>
 
