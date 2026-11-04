@@ -28,8 +28,14 @@ A box gets checked only when the work is built, tested and visible in the game.
 - [x] Night Shift: start at 5 PM at full heat and survive
 - [x] Lofi radio, synthesized in the browser: Off / Auto / Slow / Medium / Fast, auto-matched to the day
 
+- [x] Walk-in repairs: users carry the machine to your desk; two fixes in order, extra pay
+- [x] Art pass: illustrated animated devices (laptop, printer, phone, monitor) and generated avatars for every sender
+
 ## Next
 
+- [ ] A visible repair bench: walk-ins get their own corner of the screen with the device on the desk
+- [ ] More devices and three-step hardware cases (the haunted projector deserves company)
+- [ ] An upgrade shop between shifts: spend your score on a faster wiki, a second coffee pot, an intern
 - [ ] Even more ticket variety
 - [ ] Installable as an app (PWA) and playable offline
 - [ ] Progress export/import code — move your stats between devices, still no server
