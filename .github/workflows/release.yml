@@ -1,0 +1,45 @@
+name: Release
+
+# Publishes a GitHub release. Run it from the Actions tab (or the API),
+# give it a tag like v1.2.0, and it tags the current commit on the chosen
+# branch — after the tests pass.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to create, like v1.2.0
+        required: true
+      title:
+        description: Release title
+        required: true
+      notes:
+        description: Release notes (Markdown); leave empty to auto-generate
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests must pass before a release
+        run: node --test
+      - name: Create the tag and the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          TITLE: ${{ inputs.title }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          if [ -n "$NOTES" ]; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "$TITLE" --notes "$NOTES"
+          else
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "$TITLE" --generate-notes
+          fi
