@@ -4,7 +4,7 @@ import {
   createGame, tick, applyFix, usePower, mostUrgent, multiplier, clock, summary,
   evaluateAchievements, shiftInsights,
 } from './engine.js';
-import { FIX_ICONS, POWER_ICONS, face, avatar, personSVG, roomSVG, deskSVG, homeHeroSVG, inspectionDeviceSVG, DEVICE_NAMES, DEVICE_HOTSPOTS } from './icons.js';
+import { FIX_ICONS, POWER_ICONS, face, avatar, personSVG, roomSVG, deskSVG, repairBenchSVG, homeHeroSVG, inspectionDeviceSVG, DEVICE_NAMES, DEVICE_HOTSPOTS } from './icons.js';
 import { inspectionFor, INSPECTION_ZONES } from './inspection.js';
 import { CHALLENGES, challengeFor, challengeBestKey, evidenceFor } from './challenges.js';
 import { createPractice, applyPracticeFix, nextPracticeCase } from './practice.js';
@@ -17,6 +17,7 @@ const benchEl = $('bench');
 const floodEl = $('flood');
 $('room-art').innerHTML = roomSVG();
 $('desk-art').innerHTML = deskSVG();
+$('repair-bench-art').innerHTML = repairBenchSVG();
 $('home-art').innerHTML = homeHeroSVG();
 const screens = { start: $('start-screen'), pause: $('pause-screen'), over: $('over-screen'), stats: $('stats-screen'), shop: $('shop-screen') };
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -399,7 +400,7 @@ function buildFaces() {
   const faces = $('faces');
   faces.dataset.csat = String(MAX_CSAT);
   faces.innerHTML = Array.from({ length: MAX_CSAT }, () => `<span class="face on">${face(true)}</span>`).join('');
-  faces.parentElement.setAttribute('aria-label', `Customer happiness: ${MAX_CSAT} of ${MAX_CSAT}`);
+  faces.parentElement.setAttribute('aria-label', `Coworker happiness: ${MAX_CSAT} of ${MAX_CSAT}`);
 }
 
 // --- screens ----------------------------------------------------------------------
@@ -434,7 +435,7 @@ function startShift(newMode = 'free') {
   app.dataset.session = mode;
   $('exam-running').textContent = mode === 'practice' ? 'No time limit. Inspect, try a repair, and learn from the result.' : 'The shift keeps running while you inspect.';
   $('empty-big').textContent = game.online ? 'Inbox zero.' : 'Walk-ins only.';
-  $('empty-sub').textContent = game.online ? (mode === 'practice' ? 'Ready when you are. Choose Next case below.' : 'It won’t last.') : 'Your next repair is at reception.';
+  $('empty-sub').textContent = game.online ? (mode === 'practice' ? 'Ready when you are. Choose Next case below.' : 'It won’t last.') : 'Your next repair is at the IT workbench.';
   app.classList.toggle('overtime', mode === 'endless');
   coach(null);
   show('play');
@@ -847,8 +848,8 @@ function finishInspection(id, cls, label) {
   for (const button of examDialog.querySelectorAll('[data-exam-view]')) button.disabled = true;
   $('exam-patience').textContent = cls === 'out-fixed' ? 'Repair complete' : 'Visitor has left';
   $('exam-feedback').textContent = cls === 'out-fixed'
-    ? 'Device restored and returned. ' + label + ' — back to reception when you’re ready.'
-    : 'This visitor has left the desk. Return to reception to help the next person.';
+    ? 'Device restored and returned. ' + label + ' — back to the office when you’re ready.'
+    : 'This visitor has left the desk. Return to the office to help the next person.';
   $('exam-finding-title').textContent = cls === 'out-fixed' ? 'Back in working order.' : 'Examination ended.';
   $('exam-finding-detail').textContent = cls === 'out-fixed' ? 'All repair stages are complete.' : 'This device is no longer at your workbench.';
   if (cls === 'out-fixed') {
@@ -1066,7 +1067,7 @@ function render() {
   if (faces.dataset.csat !== String(game.csat)) {
     faces.dataset.csat = game.csat;
     faces.innerHTML = Array.from({ length: MAX_CSAT }, (_, i) => `<span class="face ${i < game.csat ? 'on' : 'off'}">${face(i < game.csat)}</span>`).join('');
-    faces.parentElement.setAttribute('aria-label', `Customer happiness: ${game.csat} of ${MAX_CSAT}`);
+    faces.parentElement.setAttribute('aria-label', `Coworker happiness: ${game.csat} of ${MAX_CSAT}`);
   }
 
   const emails = game.tickets.filter((t) => t.kind !== 'repair').length;

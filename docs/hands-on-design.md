@@ -2,16 +2,17 @@
 
 ## Current direction
 
-A readable repair studio: visitors and their devices at reception, the player's
-monitor and keyboard at a separate workstation, and a real architectural room
-behind them. The original blue/navy theme tokens are preserved in both themes.
-The rising-water visual is removed; the queue meter communicates workload.
+An internal corporate IT department on floor 03. Coworkers arrive from a
+badge-access corridor; glass partitions reveal shared desks and task chairs.
+A network patch cabinet, loaner laptop shelf, city windows and ceiling lights
+establish the office. An open technician workbench replaces the retail counter.
+The established blue/navy palette remains unchanged in both themes.
 
-The room has a glass entry, panoramic window, wall clock, shelving, plants,
-equipment cabinet, floor perspective, and a reception counter. People have
-fuller bodies, supported handheld devices, sleeves, hair, facial details,
-lanyards, glasses, and mugs. The CEO, Gary, Jules, and Frank retain their
-distinctive accessories. Name hashing still determines appearance.
+Larger name-seeded coworkers have shaped faces, hair, collars, rolled sleeves,
+ID badges and watches. Devices have differentiated grips, hinges, ports, bezels
+and asset labels. The CEO, Gary, Jules and Frank retain their recognizable looks.
+The player's inbox sits in a thin-bezel monitor above an adjustable arm,
+keyboard, desk mat and mug. Home, office and inspection copy use Internal IT.
 
 All game art is original inline SVG and CSS, with no images, SVG IDs, paint-server
 references, dependencies, or build step. The documentation screenshots are real

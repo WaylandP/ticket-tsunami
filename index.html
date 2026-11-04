@@ -19,7 +19,7 @@
       <span class="clock" id="clock">9:00 AM</span>
       <span class="clock-sub" id="clock-sub">Shift ends at 5:00 PM</span>
     </div>
-    <div class="hud-csat" aria-label="Customer happiness">
+    <div class="hud-csat" aria-label="Coworker happiness">
       <span class="hud-label">Happiness</span>
       <span class="faces" id="faces"></span>
     </div>
@@ -53,13 +53,13 @@
     </div>
     <div class="scenery" id="room-art" aria-hidden="true"></div>
     <div class="walkins-wrap" id="bench-wrap">
-      <span class="counter-label">THE REPAIR DESK <span>Click a person to inspect their device</span></span>
+      <span class="counter-label">IT OPERATIONS <span>Meet your coworkers · inspect their devices</span></span>
       <ol class="walkins" id="bench" aria-label="Walk-in repairs"></ol>
-      <div class="counter" aria-hidden="true"><span class="counter-emblem">✚</span><span>DEVICE CARE<small>GOOD TECH. GOOD COMPANY.</small></span><span class="counter-light"></span></div>
+      <div class="counter" id="repair-bench-art" aria-hidden="true"></div>
     </div>
     <section class="workstation" aria-label="Your workstation">
       <div class="monitor-frame">
-        <div class="monitor-toolbar"><span class="monitor-led" aria-hidden="true"></span><strong>SUPPORT DESK</strong><span id="inbox-status">All quiet. Suspicious.</span></div>
+        <div class="monitor-toolbar"><span class="monitor-led" aria-hidden="true"></span><strong>SERVICE DESK</strong><span id="inbox-status">All quiet. Suspicious.</span></div>
         <div class="inbox-tabs"><span>Inbox</span><span>Incoming requests</span></div>
         <div class="inbox-screen">
           <div class="empty" id="empty" hidden>
@@ -77,8 +77,8 @@
 
     <section class="overlay overlay-start" id="start-screen" aria-labelledby="start-title">
       <div class="start-layout home-shell office-home">
-        <header class="home-mast"><span class="home-wordmark"><span aria-hidden="true">✚</span> DEVICE CARE</span><span class="home-status">Your next great fix starts here.</span></header>
-        <div class="home-copy"><p class="eyebrow">AN IT SUPPORT SIMULATOR</p><h1 id="start-title" class="title">Ticket<br><span>Tsunami</span></h1><p class="home-lede">Small desk. Big tech energy.</p><p class="home-description">Meet the people. Examine their devices.<br>Work out what went wrong.</p></div>
+        <header class="home-mast"><span class="home-wordmark"><span aria-hidden="true">›_</span> INTERNAL IT</span><span class="home-status">Floor 03. Everyone needs you.</span></header>
+        <div class="home-copy"><p class="eyebrow">AN IT SUPPORT SIMULATOR</p><h1 id="start-title" class="title">Ticket<br><span>Tsunami</span></h1><p class="home-lede">Small desk. Big tech energy.</p><p class="home-description">Meet your coworkers. Examine their devices.<br>Work out what went wrong.</p></div>
         <div class="home-art-wrap"><div id="home-art"></div><p class="home-art-caption">YOUR OFFICE. YOUR PACE.</p></div>
         <section class="home-launch" aria-labelledby="diff-label">
           <div class="diff-wrap"><div class="setup-heading"><span>01</span><h2 id="diff-label">Question difficulty</h2></div><div class="diff" id="diff" role="group" aria-labelledby="diff-label" aria-describedby="diff-blurb"></div><p class="diff-blurb" id="diff-blurb" aria-live="polite"></p></div>
@@ -165,8 +165,8 @@
   <div class="exam-shell">
     <div class="exam-top">
     <header class="exam-header">
-      <div><p class="eyebrow">Device Care / Examination</p><h2 id="exam-title">At the workbench</h2></div>
-      <button type="button" class="icon-btn" id="exam-close" aria-label="Return to reception">×</button>
+      <div><p class="eyebrow">Internal IT / Device inspection</p><h2 id="exam-title">At the workbench</h2></div>
+      <button type="button" class="icon-btn" id="exam-close" aria-label="Return to the office">×</button>
     </header>
     <div class="exam-live"><span id="exam-clock"></span><span id="exam-patience"></span><span id="exam-inbox"></span><button type="button" class="btn-link" id="exam-pause">Pause</button></div>
     </div>

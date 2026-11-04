@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/WaylandP/ticket-tsunami/actions/workflows/ci.yml/badge.svg)](https://github.com/WaylandP/ticket-tsunami/actions/workflows/ci.yml)
 
-A cartoon IT support simulator. Welcome people to your repair desk, inspect the
+A cartoon IT support simulator inside a corporate IT department. Meet coworkers, inspect the
 devices they bring in, and work out the next repair from their complaint and the
 physical evidence. Handle email requests on your own workstation alongside them.
 
@@ -11,11 +11,9 @@ physical evidence. Handle email requests on your own workstation alongside them.
 Practice at your own pace, or keep the office running through a timed shift.
 No downloads, accounts, or installation.
 
-![Untimed practice in the redesigned repair studio, light mode](docs/play-light.png)
+![Untimed practice in the corporate IT office, dark mode](docs/office-corporate-dark.jpg)
 
-| Home, dark mode | Practice on a phone | Timed shift report |
-| --- | --- | --- |
-| ![Visible question difficulty, play styles, music, and email settings](docs/home-dark-phone.png) | ![The repair desk and inbox in dark mode](docs/play-dark-phone.png) | ![A completed timed shift on a phone](docs/report-dark-phone.png) |
+![Home with question difficulty, play styles, music and email settings](docs/home-corporate-dark.jpg)
 
 These are real browser screenshots. The game itself uses inline SVG and CSS art;
 it loads no image files.
@@ -99,7 +97,7 @@ untimed practice controller is separate. The original engine file is unchanged.
 | src/tickets.js | Authored complaints, existing fix IDs, and repair sequences |
 | src/inspection.js | Read-only component findings for every repair stage |
 | src/challenges.js | Diagnosis levels, evidence presentation, and saved-level migration |
-| src/icons.js | Original inline SVG room, people, devices, and desk art |
+| src/icons.js | Original inline SVG corporate office, coworkers, devices, and workbench art |
 | src/styles.css | Layout, themes, and animation |
 | src/sound.js | Synthesized audio |
 | test/ | Engine, inspection, challenge, and practice tests |
