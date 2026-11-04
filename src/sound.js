@@ -6,7 +6,10 @@ let ctx = null;
 let master = null;
 let muted = false;
 
-export function setMuted(m) { muted = m; }
+export function setMuted(m) {
+  muted = m;
+  if (master) master.gain.value = m ? 0 : 0.14; // silences effects and music alike
+}
 export function isMuted() { return muted; }
 
 function ac() {
@@ -68,3 +71,132 @@ export function play(name) {
     SOUNDS[name]();
   } catch { /* sound is never worth crashing over */ }
 }
+
+// --- the lofi radio -------------------------------------------------------------
+// A generative loop: jazzy seventh chords, a lazy bass, brushed hats and a
+// little tape hiss, synthesized bar by bar. Three speeds for three moods.
+
+export const TEMPOS = { slow: 70, medium: 85, fast: 104 };
+
+// Dm7 → G7 → Cmaj7 → Am7, forever. The classic.
+const CHORDS = [
+  [146.83, 174.61, 220.0, 261.63],
+  [98.0, 123.47, 146.83, 174.61],
+  [130.81, 164.81, 196.0, 246.94],
+  [110.0, 130.81, 164.81, 196.0],
+];
+const ROOTS = [73.42, 49.0, 65.41, 55.0];
+
+let radio = null; // { timer, bar, nextBarAt, beat, bus, hiss }
+
+function noiseBuffer() {
+  const buf = ctx.createBuffer(1, ctx.sampleRate * 0.4, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  return buf;
+}
+
+function hat(bus, at, gain) {
+  const src = ctx.createBufferSource();
+  src.buffer = noiseBuffer();
+  const hp = ctx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 6000;
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(gain, at);
+  env.gain.exponentialRampToValueAtTime(0.001, at + 0.06);
+  src.connect(hp); hp.connect(env); env.connect(bus);
+  src.start(at); src.stop(at + 0.08);
+}
+
+function pluck(bus, at, f, dur, gain, type = 'triangle') {
+  const osc = ctx.createOscillator();
+  const env = ctx.createGain();
+  osc.type = type;
+  osc.frequency.value = f;
+  // a lazy, tape-wobbly pitch
+  osc.detune.setValueAtTime(Math.random() * 14 - 7, at);
+  env.gain.setValueAtTime(0, at);
+  env.gain.linearRampToValueAtTime(gain, at + 0.04);
+  env.gain.exponentialRampToValueAtTime(0.001, at + dur);
+  osc.connect(env); env.connect(bus);
+  osc.start(at); osc.stop(at + dur + 0.05);
+}
+
+function scheduleBar(at) {
+  const { beat, bus } = radio;
+  const chord = CHORDS[radio.bar % 4];
+  // pad: the chord, breathed in slowly
+  for (const f of chord) {
+    const osc = ctx.createOscillator();
+    const env = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = f;
+    env.gain.setValueAtTime(0, at);
+    env.gain.linearRampToValueAtTime(0.1, at + beat * 0.9);
+    env.gain.setValueAtTime(0.1, at + beat * 3);
+    env.gain.linearRampToValueAtTime(0.0001, at + beat * 4);
+    osc.connect(env); env.connect(bus);
+    osc.start(at); osc.stop(at + beat * 4.1);
+  }
+  // bass: root on the one, a short fifth on the and-of-three
+  const root = ROOTS[radio.bar % 4];
+  pluck(bus, at, root, beat * 1.8, 0.4, 'sine');
+  pluck(bus, at + beat * 2.6, root * 1.5, beat * 0.9, 0.25, 'sine');
+  // hats on the back beats, with a ghost now and then
+  hat(bus, at + beat, 0.12);
+  hat(bus, at + beat * 3, 0.12);
+  if (Math.random() < 0.45) hat(bus, at + beat * 3.6, 0.06);
+  // a sparse pentatonic sprinkle every other bar
+  if (radio.bar % 2 === 1 && Math.random() < 0.7) {
+    const scale = [523.25, 587.33, 659.25, 783.99, 880.0];
+    pluck(bus, at + beat * (1.5 + Math.floor(Math.random() * 2)), scale[Math.floor(Math.random() * scale.length)], beat * 0.8, 0.07);
+  }
+  radio.bar++;
+}
+
+export const music = {
+  start(tempoName) {
+    try {
+      if (!ac()) return;
+      music.stop();
+      const bpm = TEMPOS[tempoName] || TEMPOS.medium;
+      const bus = ctx.createGain();
+      bus.gain.value = 0.55;
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 1700;
+      bus.connect(lp); lp.connect(master);
+      // tape hiss, barely there
+      const hiss = ctx.createBufferSource();
+      hiss.buffer = noiseBuffer();
+      hiss.loop = true;
+      const hissLp = ctx.createBiquadFilter();
+      hissLp.type = 'lowpass';
+      hissLp.frequency.value = 3500;
+      const hissGain = ctx.createGain();
+      hissGain.gain.value = 0.012;
+      hiss.connect(hissLp); hissLp.connect(hissGain); hissGain.connect(master);
+      hiss.start();
+      radio = { bar: 0, beat: 60 / bpm, bus, hiss, nextBarAt: ctx.currentTime + 0.1, timer: null };
+      radio.timer = setInterval(() => {
+        try {
+          while (radio && radio.nextBarAt < ctx.currentTime + 1.2) {
+            scheduleBar(radio.nextBarAt);
+            radio.nextBarAt += radio.beat * 4;
+          }
+        } catch { /* keep quiet */ }
+      }, 300);
+    } catch { /* the show goes on without music */ }
+  },
+  stop() {
+    if (!radio) return;
+    clearInterval(radio.timer);
+    try {
+      radio.bus.gain.setTargetAtTime(0, ctx.currentTime, 0.2);
+      radio.hiss.stop(ctx.currentTime + 0.6);
+    } catch { /* fine */ }
+    radio = null;
+  },
+  playing() { return radio !== null; },
+};
