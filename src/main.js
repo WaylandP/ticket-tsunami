@@ -10,8 +10,9 @@ import { play, setMuted, isMuted, music } from './sound.js';
 const $ = (id) => document.getElementById(id);
 const app = $('app');
 const queueEl = $('queue');
+const benchEl = $('bench');
 const floodEl = $('flood');
-const screens = { start: $('start-screen'), pause: $('pause-screen'), over: $('over-screen'), stats: $('stats-screen') };
+const screens = { start: $('start-screen'), pause: $('pause-screen'), over: $('over-screen'), stats: $('stats-screen'), shop: $('shop-screen') };
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const SHORT = { restart: 'Restart', password: 'Password', connect: 'Connection', update: 'Update', notit: 'Not IT' };
@@ -82,6 +83,81 @@ function loadDaily() {
 }
 function saveDaily(result) {
   try { localStorage.setItem('ticket-tsunami:daily', JSON.stringify(result)); } catch { /* private mode etc. */ }
+}
+
+// --- online tickets toggle -------------------------------------------------------
+
+let onlinePref = (() => {
+  try { return localStorage.getItem('ticket-tsunami:online') !== '0'; } catch { return true; }
+})();
+
+function renderOnlineToggle() {
+  const btn = $('online-toggle');
+  btn.setAttribute('aria-checked', String(onlinePref));
+  btn.classList.toggle('on', onlinePref);
+  $('online-sub').textContent = onlinePref
+    ? 'Emails flood in while people walk up.'
+    : 'Walk-ins only. Just you and the bench.';
+}
+
+// --- the supply closet (shop) ----------------------------------------------------
+
+const UPGRADES = [
+  { id: 'coffeepot', icon: '☕', name: 'Second coffee pot', desc: 'Coffee breaks last 8 seconds instead of 5.', cost: 300, perk: { coffeeMs: 8000 } },
+  { id: 'intern', icon: '🧑‍💻', name: 'Jules, part-time', desc: 'Start every shift with a power charge ready.', cost: 400, perk: { startCharges: 1 } },
+  { id: 'wiki2', icon: '📖', name: 'Wiki, indexed', desc: 'Tickets reveal their fix on their own at half patience.', cost: 500, perk: { autoHint: true } },
+  { id: 'chair', icon: '🪑', name: 'Ergonomic chair', desc: 'The first unhappy user each shift forgives you.', cost: 600, perk: { armor: 1 } },
+];
+
+function loadShop() {
+  try { return { budget: 0, owned: [], ...JSON.parse(localStorage.getItem('ticket-tsunami:shop')) }; } catch { return { budget: 0, owned: [] }; }
+}
+function saveShop(shop) {
+  try { localStorage.setItem('ticket-tsunami:shop', JSON.stringify(shop)); } catch { /* fine */ }
+}
+
+/** Everything the owned upgrades do, merged, for the engine. */
+function ownedPerks() {
+  const shop = loadShop();
+  return Object.assign({}, ...UPGRADES.filter((u) => shop.owned.includes(u.id)).map((u) => u.perk));
+}
+
+function renderShop() {
+  const shop = loadShop();
+  $('shop-budget').textContent = shop.budget.toLocaleString();
+  const grid = $('shop-grid');
+  grid.replaceChildren(...UPGRADES.map((u) => {
+    const owned = shop.owned.includes(u.id);
+    const div = document.createElement('div');
+    div.className = 'shop-item' + (owned ? ' owned' : '');
+    div.innerHTML = `<span class="shop-icon" aria-hidden="true">${u.icon}</span>
+      <span class="shop-body"><strong>${u.name}</strong><span class="shop-desc">${u.desc}</span></span>
+      <button type="button" class="btn shop-buy"></button>`;
+    const btn = div.querySelector('.shop-buy');
+    if (owned) {
+      btn.textContent = 'Owned ✓';
+      btn.disabled = true;
+    } else {
+      btn.textContent = `${u.cost} ☕`;
+      btn.disabled = shop.budget < u.cost;
+      btn.addEventListener('click', () => {
+        const s = loadShop();
+        if (s.owned.includes(u.id) || s.budget < u.cost) return;
+        s.budget -= u.cost;
+        s.owned.push(u.id);
+        saveShop(s);
+        play('charge');
+        toast(`${u.name}: yours.`);
+        renderShop();
+      });
+    }
+    return div;
+  }));
+}
+
+function openShop() {
+  renderShop();
+  show('shop');
 }
 
 // --- music preference ----------------------------------------------------------
@@ -314,7 +390,7 @@ function buildFaces() {
 function show(name) {
   app.dataset.screen = name;
   for (const [key, el] of Object.entries(screens)) el.hidden = key !== name;
-  const focusTarget = { start: 'start-btn', pause: 'resume-btn', over: 'again-btn', stats: 'stats-back-btn' }[name];
+  const focusTarget = { start: 'start-btn', pause: 'resume-btn', over: 'again-btn', stats: 'stats-back-btn', shop: 'shop-back-btn' }[name];
   if (focusTarget) $(focusTarget).focus({ preventScroll: true });
 }
 
@@ -324,12 +400,18 @@ function startShift(newMode = 'free') {
   for (const el of cards.values()) el.remove();
   cards.clear();
   queueEl.replaceChildren();
+  benchEl.replaceChildren();
+  $('bench-wrap').hidden = true;
   selectedId = null;
   const randomSeed = (Date.now() ^ (Math.random() * 1e9)) | 0;
-  if (mode === 'daily') game = createGame(dailySeed(todayKey()), DEFAULT_DIFFICULTY);
+  const opts = { online: onlinePref, perks: ownedPerks() };
+  // The Daily is the same storm for everyone: no upgrades, inbox always on.
+  if (mode === 'daily') game = createGame(dailySeed(todayKey()), DEFAULT_DIFFICULTY, 'shift', { online: true });
   else if (mode === 'tutorial') game = createGame(randomSeed, DEFAULT_DIFFICULTY, 'tutorial');
-  else if (mode === 'endless') game = createGame(randomSeed, difficulty, 'endless');
-  else game = createGame(randomSeed, difficulty);
+  else if (mode === 'endless') game = createGame(randomSeed, difficulty, 'endless', opts);
+  else game = createGame(randomSeed, difficulty, 'shift', opts);
+  $('empty-big').textContent = game.online ? 'Inbox zero.' : 'The bench is clear.';
+  $('empty-sub').textContent = game.online ? 'It won’t last.' : 'Someone is already on the way.';
   app.classList.toggle('overtime', mode === 'endless');
   coach(null);
   show('play');
@@ -350,6 +432,8 @@ function goHome() {
   for (const el of cards.values()) el.remove();
   cards.clear();
   queueEl.replaceChildren();
+  benchEl.replaceChildren();
+  $('bench-wrap').hidden = true;
   $('empty').hidden = true;
   app.classList.remove('overtime', 'frenzy');
   $('clock').textContent = '9:00 AM';
@@ -398,6 +482,16 @@ function endShift() {
     updateDailyCard();
   }
   if (!tutorial) recordShift(s);
+
+  // Shifts pay the bills: budget = score / 10. The Daily pays too.
+  const pay = tutorial ? 0 : Math.round(s.score / 10);
+  if (pay > 0) {
+    const shop = loadShop();
+    shop.budget += pay;
+    saveShop(shop);
+  }
+  $('r-budget').hidden = pay === 0;
+  $('r-budget').textContent = `IT budget +${pay.toLocaleString()} ☕`;
 
   // Achievements: what this shift earned, and which of those are new forever.
   const earned = evaluateAchievements(s);
@@ -564,6 +658,10 @@ function handleEvents(events) {
         restartAnim($('faces'), 'ouch');
         if (ev.reason === 'overflow') toast('Queue full. Someone called your cell instead.');
         break;
+      case 'armor':
+        play('power');
+        toast('Your ergonomic chair absorbs the complaint. 🪑');
+        break;
       case 'outage':
         play('outage');
         banner(ev.title, ev.detail);
@@ -615,7 +713,7 @@ function createCard(ticket) {
     selectedId = ticket.id;
     render();
   });
-  queueEl.append(li);
+  (ticket.kind === 'repair' ? benchEl : queueEl).append(li);
   cards.set(ticket.id, li);
   return li;
 }
@@ -683,6 +781,9 @@ function render() {
     faces.parentElement.setAttribute('aria-label', `Customer happiness: ${game.csat} of ${MAX_CSAT}`);
   }
 
+  const emails = game.tickets.filter((t) => t.kind !== 'repair').length;
+  const repairs = game.tickets.length - emails;
+  $('bench-wrap').hidden = repairs === 0;
   $('empty').hidden = game.tickets.length !== 0 || game.phase !== 'playing';
   app.classList.toggle('frenzy', game.t < game.frenzyUntil && game.phase === 'playing');
 
@@ -693,7 +794,7 @@ function render() {
     btn.disabled = !running || game.charges <= 0;
   }
 
-  const n = game.tickets.length;
+  const n = emails; // the water answers to the inbox; walk-ins stand on dry land
   const pips = $('pips').children;
   for (let i = 0; i < pips.length; i++) pips[i].classList.toggle('on', i < n);
   $('pips').dataset.level = n >= MAX_QUEUE - 1 ? 'high' : n >= MAX_QUEUE - 3 ? 'mid' : 'low';
@@ -771,6 +872,13 @@ $('endless-btn').addEventListener('click', () => startShift('endless'));
 $('tutorial-btn').addEventListener('click', () => startShift('tutorial'));
 $('stats-btn').addEventListener('click', openStats);
 $('stats-back-btn').addEventListener('click', () => show('start'));
+$('shop-btn').addEventListener('click', openShop);
+$('shop-back-btn').addEventListener('click', () => show('start'));
+$('online-toggle').addEventListener('click', () => {
+  onlinePref = !onlinePref;
+  try { localStorage.setItem('ticket-tsunami:online', onlinePref ? '1' : '0'); } catch { /* fine */ }
+  renderOnlineToggle();
+});
 $('again-btn').addEventListener('click', () => startShift('free'));
 $('menu-btn').addEventListener('click', goHome);
 $('pause-btn').addEventListener('click', pause);
@@ -815,6 +923,7 @@ buildFaces();
 buildDiffPicker();
 buildPowers();
 buildMusicPicker();
+renderOnlineToggle();
 updateDailyCard();
 show('start');
 requestAnimationFrame((now) => { last = now; frame(now); });

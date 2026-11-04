@@ -131,3 +131,26 @@ export const DEVICE_ART = {
     <rect x="14" y="38" width="20" height="2.6" rx="1.3" fill="var(--muted)"/>
   </svg>`,
 };
+
+// The big jobs get bigger art.
+DEVICE_ART.server = `<svg aria-hidden="true" viewBox="0 0 48 48">
+    <path class="flame" d="M33 8c2.4 1.8 3.6 3.8 3.6 5.8 0 2.4-1.7 4-3.8 4s-3.8-1.6-3.8-4c0-1.4.6-2.4 1.6-3.6 0 1.2.7 2 1.6 2.2-.4-1.6-.1-3 0.8-4.4z" fill="#f59e0b"/>
+    <rect x="12" y="10" width="20" height="32" rx="2.5" fill="var(--surface-2)" stroke="var(--muted)" stroke-width="2"/>
+    <path d="M16 17h8M16 25h8M16 33h8" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+    <circle class="blink" cx="28" cy="17" r="1.6" fill="var(--danger)"/>
+    <circle class="blink p2" cx="28" cy="25" r="1.6" fill="var(--good)"/>
+    <circle class="blink" cx="28" cy="33" r="1.6" fill="var(--warn)"/>
+  </svg>`;
+DEVICE_ART.tv = `<svg aria-hidden="true" viewBox="0 0 48 48">
+    <rect x="4" y="10" width="40" height="26" rx="3" fill="var(--surface-2)" stroke="var(--muted)" stroke-width="2"/>
+    <g opacity=".5" fill="var(--muted)">
+      <circle cx="12" cy="17" r="1"/><circle cx="20" cy="30" r="1"/><circle cx="30" cy="15" r="1"/>
+      <circle cx="37" cy="27" r="1"/><circle cx="16" cy="24" r="1"/><circle cx="33" cy="21" r="1"/>
+    </g>
+    <g class="ghost">
+      <circle cx="22" cy="21" r="1.6" fill="var(--muted)"/>
+      <circle cx="28" cy="21" r="1.6" fill="var(--muted)"/>
+      <path d="M22 26q3 2 6 0" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round"/>
+    </g>
+    <path d="M22 36v4m4-4v4M18 42h12" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+  </svg>`;

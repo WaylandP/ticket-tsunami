@@ -51,9 +51,32 @@
     <div class="coach" id="coach" hidden>
       <span id="coach-text"></span>
     </div>
+    <div class="scenery" aria-hidden="true">
+      <svg class="scene scene-left" viewBox="0 0 150 100">
+        <rect x="18" y="52" width="86" height="8" rx="2" fill="var(--muted)" opacity=".55"/>
+        <path d="M26 60v34M94 60v34" stroke="var(--muted)" stroke-width="5" opacity=".55"/>
+        <rect x="38" y="24" width="38" height="26" rx="2.5" fill="var(--surface-2)" stroke="var(--muted)" stroke-width="3"/>
+        <path d="M52 50v4m10-4v4M48 56h18" stroke="var(--muted)" stroke-width="3"/>
+        <path d="M126 56c-7-2-10-9-7-16 5 4 7 8 7 16zM126 56c7-2 10-9 7-16-5 4-7 8-7 16zM126 58c0-10 1-17 0-24" stroke="var(--good)" stroke-width="3" fill="none"/>
+        <path d="M118 58h16l-2.5 18h-11z" fill="var(--surface-2)" stroke="var(--muted)" stroke-width="3"/>
+      </svg>
+      <svg class="scene scene-right" viewBox="0 0 150 100">
+        <rect x="14" y="26" width="44" height="68" rx="3" fill="var(--surface-2)" stroke="var(--muted)" stroke-width="3"/>
+        <path d="M20 44h32M20 66h32M32 35h8m-8 22h8m-8 22h8" stroke="var(--muted)" stroke-width="3"/>
+        <rect x="80" y="52" width="56" height="26" rx="4" fill="var(--surface-2)" stroke="var(--muted)" stroke-width="3"/>
+        <path d="M90 52v-9h36v9" fill="none" stroke="var(--muted)" stroke-width="3"/>
+        <rect x="88" y="60" width="22" height="4" rx="2" fill="var(--muted)"/>
+        <circle cx="128" cy="64" r="3" fill="var(--danger)" opacity=".8"/>
+        <path d="M80 86h56" stroke="var(--muted)" stroke-width="4" opacity=".55"/>
+      </svg>
+    </div>
+    <div class="bench-wrap" id="bench-wrap" hidden>
+      <span class="bench-label">🔧 Walk-ins</span>
+      <ol class="bench" id="bench" aria-label="Walk-in repairs"></ol>
+    </div>
     <div class="empty" id="empty" hidden>
-      <span class="empty-big">Inbox zero.</span>
-      <span class="empty-sub">It won’t last.</span>
+      <span class="empty-big" id="empty-big">Inbox zero.</span>
+      <span class="empty-sub" id="empty-sub">It won’t last.</span>
     </div>
     <ol class="queue" id="queue" aria-label="Open tickets"></ol>
 
@@ -93,15 +116,37 @@
         </div>
 
         <div class="card tile radio-tile">
-          <p class="hud-label" id="music-label">Lofi radio</p>
-          <div class="music" id="music" role="group" aria-labelledby="music-label"></div>
+          <div class="pref-row">
+            <p class="hud-label" id="music-label">Lofi radio</p>
+            <div class="music" id="music" role="group" aria-labelledby="music-label"></div>
+          </div>
+          <div class="pref-row pref-toggle-row">
+            <p class="hud-label" id="online-label">Online tickets</p>
+            <button type="button" class="switch" id="online-toggle" role="switch" aria-checked="true" aria-labelledby="online-label">
+              <span class="switch-thumb" aria-hidden="true"></span>
+            </button>
+            <p class="pref-sub" id="online-sub">Emails flood in while people walk up.</p>
+          </div>
         </div>
 
         <p class="links-row">
-          <button type="button" class="btn-link" id="tutorial-btn">First day? Take the training</button>
+          <button type="button" class="btn-link" id="tutorial-btn">Training</button>
           <span class="dot" aria-hidden="true">·</span>
           <button type="button" class="btn-link" id="stats-btn">Your career</button>
+          <span class="dot" aria-hidden="true">·</span>
+          <button type="button" class="btn-link" id="shop-btn">Supply closet</button>
         </p>
+      </div>
+    </section>
+
+    <section class="overlay" id="shop-screen" aria-labelledby="shop-title" hidden>
+      <div class="card report">
+        <p class="eyebrow">The supply closet</p>
+        <h2 id="shop-title" class="title-sm">Spend the budget</h2>
+        <p class="shop-balance">IT budget: <strong id="shop-budget"></strong> ☕</p>
+        <div class="shop-grid" id="shop-grid"></div>
+        <p class="shop-note">Shifts earn budget (score ÷ 10). Upgrades apply everywhere except the Daily — everyone plays that one fair.</p>
+        <button type="button" class="btn btn-primary" id="shop-back-btn">Back</button>
       </div>
     </section>
 
@@ -141,6 +186,7 @@
           <div><dt>Fixed it themselves</dt><dd id="r-self"></dd></div>
         </dl>
         <p class="newbest" id="r-newbest" hidden>New personal best</p>
+        <p class="budget-line" id="r-budget" hidden></p>
         <ul class="insights" id="r-insights" hidden></ul>
         <div class="badges" id="r-badges" hidden></div>
         <p class="badge-count" id="r-badge-count" hidden></p>
