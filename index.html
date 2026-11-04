@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Ticket Tsunami</title>
-  <meta name="description" content="A help desk survival game. Close tickets with the right fix before the queue floods.">
+  <meta name="description" content="An illustrated IT support simulator. Inspect devices, diagnose faults, and learn at your own pace.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,7 +43,7 @@
   </header>
 
   <main class="floor">
-    <div class="flood" id="flood" aria-hidden="true"></div>
+    <div class="flood" id="flood" aria-hidden="true" hidden></div>
     <div class="banner" id="banner" role="status" hidden>
       <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path d="M12 3l10 18H2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="18" r="1.3" fill="currentColor"/></svg>
       <span><strong id="banner-title"></strong> <span id="banner-detail"></span></span>
@@ -53,13 +53,14 @@
     </div>
     <div class="scenery" id="room-art" aria-hidden="true"></div>
     <div class="walkins-wrap" id="bench-wrap">
-      <span class="counter-label">REPAIR RECEPTION <span>Take a breath. Take a number.</span></span>
+      <span class="counter-label">THE REPAIR DESK <span>Click a person to inspect their device</span></span>
       <ol class="walkins" id="bench" aria-label="Walk-in repairs"></ol>
-      <div class="counter" aria-hidden="true"><span>WALK-IN CARE</span><span>01 &nbsp; ✚ &nbsp; 02</span></div>
+      <div class="counter" aria-hidden="true"><span class="counter-emblem">✚</span><span>DEVICE CARE<small>GOOD TECH. GOOD COMPANY.</small></span><span class="counter-light"></span></div>
     </div>
     <section class="workstation" aria-label="Your workstation">
       <div class="monitor-frame">
-        <div class="monitor-toolbar"><span class="monitor-led" aria-hidden="true"></span><strong>MY INBOX</strong><span id="inbox-status">All quiet. Suspicious.</span></div>
+        <div class="monitor-toolbar"><span class="monitor-led" aria-hidden="true"></span><strong>SUPPORT DESK</strong><span id="inbox-status">All quiet. Suspicious.</span></div>
+        <div class="inbox-tabs"><span>Inbox</span><span>Incoming requests</span></div>
         <div class="inbox-screen">
           <div class="empty" id="empty" hidden>
             <span class="empty-big" id="empty-big">Inbox zero.</span>
@@ -72,37 +73,21 @@
       <div class="desk-scene" id="desk-art" aria-hidden="true"></div>
     </section>
 
+    <div class="practice-bar" id="practice-bar" hidden><span><strong>Take your time.</strong> No countdowns or expired tickets.</span><button type="button" class="btn btn-primary" id="next-case-btn">Next case →</button><button type="button" class="btn btn-ghost" id="practice-finish-btn">Finish</button></div>
+
     <section class="overlay overlay-start" id="start-screen" aria-labelledby="start-title">
-      <div class="start-layout home-shell">
-        <header class="home-mast"><span class="home-wordmark"><span aria-hidden="true">✚</span> DEVICE CARE</span><span class="home-status">IT support. Under pressure.</span></header>
-        <div class="home-copy">
-          <p class="eyebrow">THE HELP-DESK SURVIVAL GAME</p>
-          <h1 id="start-title" class="title">Ticket<br><span>Tsunami</span><span class="title-dot" aria-hidden="true">.</span></h1>
-          <p class="home-lede">Their tech is broken. <br>Your shift just started.</p>
-          <p class="home-description">Inspect devices. Solve IT problems.<br>Keep the office running.</p>
-        </div>
-        <div class="home-art-wrap"><div id="home-art"></div><p class="home-art-caption">LISTEN <span aria-hidden="true">→</span> INSPECT <span aria-hidden="true">→</span> FIX</p></div>
+      <div class="start-layout home-shell office-home">
+        <header class="home-mast"><span class="home-wordmark"><span aria-hidden="true">✚</span> DEVICE CARE</span><span class="home-status">Your next great fix starts here.</span></header>
+        <div class="home-copy"><p class="eyebrow">AN IT SUPPORT SIMULATOR</p><h1 id="start-title" class="title">Ticket<br><span>Tsunami</span></h1><p class="home-lede">Small desk. Big tech energy.</p><p class="home-description">Meet the people. Examine their devices.<br>Work out what went wrong.</p></div>
+        <div class="home-art-wrap"><div id="home-art"></div><p class="home-art-caption">YOUR OFFICE. YOUR PACE.</p></div>
         <section class="home-launch" aria-labelledby="diff-label">
-          <div class="launch-heading"><span class="launch-number" aria-hidden="true">01</span><div><p class="eyebrow">READY FOR YOUR SHIFT?</p><h2 id="diff-label">Choose your difficulty</h2></div></div>
-          <div class="diff-wrap">
-            <div class="diff" id="diff" role="group" aria-labelledby="diff-label" aria-describedby="diff-blurb"></div>
-            <p class="diff-blurb" id="diff-blurb" aria-live="polite"></p>
-          </div>
-          <div class="home-launch-row"><button type="button" class="btn btn-primary" id="start-btn">Start playing <span aria-hidden="true">→</span></button><button type="button" class="btn btn-ghost" id="tutorial-btn">How to play</button></div>
-          <p class="launch-note">Choose a ticket. Inspect the device. Find the fix.</p>
+          <div class="diff-wrap"><div class="setup-heading"><span>01</span><h2 id="diff-label">Question difficulty</h2></div><div class="diff" id="diff" role="group" aria-labelledby="diff-label" aria-describedby="diff-blurb"></div><p class="diff-blurb" id="diff-blurb" aria-live="polite"></p></div>
+          <div class="session-wrap"><div class="setup-heading"><span>02</span><h2 id="session-label">How do you want to play?</h2></div><div class="session-choices" role="group" aria-labelledby="session-label"><button type="button" class="session-choice" data-session="practice" aria-pressed="true"><strong>Practice</strong><span>∞ No time limit</span></button><button type="button" class="session-choice" data-session="free" aria-pressed="false"><strong>Timed shift</strong><span>Keep the queue moving</span></button></div></div>
+          <div class="home-preferences" aria-label="Session settings"><div class="music-pref"><p class="hud-label" id="music-label">Music</p><div class="music" id="music" role="group" aria-labelledby="music-label"></div></div><div class="inbox-pref"><div><p class="hud-label" id="online-label">Email tickets</p><p id="online-sub" class="pref-sub">Alongside walk-ins</p></div><button type="button" class="switch" id="online-toggle" role="switch" aria-checked="true" aria-labelledby="online-label"><span class="switch-thumb" aria-hidden="true"></span></button></div></div>
+          <div class="home-launch-row"><button type="button" class="btn btn-primary" id="start-btn">Start practice <span aria-hidden="true">→</span></button><button type="button" class="btn btn-ghost" id="tutorial-btn">How to play</button></div>
           <p class="best" id="best-line" hidden></p>
         </section>
-        <footer class="home-footer">
-          <details class="home-settings home-extras"><summary>More modes</summary><div class="home-settings-panel">
-            <button type="button" class="btn-mode" id="daily-btn"><span class="mode-title">Daily challenge · <span id="daily-date"></span></span><span class="mode-sub" id="daily-sub">Same cases for everyone. One try.</span></button>
-            <button type="button" class="btn-mode" id="endless-btn"><span class="mode-title">Endless shift</span><span class="mode-sub">Start at 5 PM. Survive as long as you can.</span></button>
-          </div></details>
-          <button type="button" class="btn-link" id="stats-btn">Stats</button><button type="button" class="btn-link" id="shop-btn">Upgrades</button>
-          <details class="home-settings"><summary>Settings</summary><div class="home-settings-panel">
-            <div class="pref-row"><p class="hud-label" id="music-label">Music</p><div class="music" id="music" role="group" aria-labelledby="music-label"></div></div>
-            <div class="pref-row pref-toggle-row"><p class="hud-label" id="online-label">Email queue</p><button type="button" class="switch" id="online-toggle" role="switch" aria-checked="true" aria-labelledby="online-label"><span class="switch-thumb" aria-hidden="true"></span></button><p class="pref-sub" id="online-sub">Emails arrive alongside walk-ins.</p></div>
-          </div></details>
-        </footer>
+        <footer class="home-footer"><button type="button" class="btn-link" id="daily-btn" aria-label="Daily challenge"><span class="mode-title">Daily challenge <span id="daily-date"></span></span><span id="daily-sub" class="sr-only">Same cases for everyone. One try.</span></button><button type="button" class="btn-link" id="endless-btn">Endless shift</button><button type="button" class="btn-link" id="stats-btn">Stats</button><button type="button" class="btn-link" id="shop-btn">Upgrades</button></footer>
       </div>
     </section>
 

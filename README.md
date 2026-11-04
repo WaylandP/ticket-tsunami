@@ -2,104 +2,110 @@
 
 [![CI](https://github.com/WaylandP/ticket-tsunami/actions/workflows/ci.yml/badge.svg)](https://github.com/WaylandP/ticket-tsunami/actions/workflows/ci.yml)
 
-A help desk survival game for your browser. It's 9 AM, you're the only one on
-the help desk, and the tickets are coming. Read each one, pick the fix that
-actually solves it, and keep the queue from flooding until 5 PM — or go down
-swinging in overtime.
+A cartoon IT support simulator. Welcome people to your repair desk, inspect the
+devices they bring in, and work out the next repair from their complaint and the
+physical evidence. Handle email requests on your own workstation alongside them.
 
 ### ▶ [Play it now](https://ticket-tsunami.vercel.app)
 
-![The queue rising toward the water line, light mode](docs/play-light.png)
+Practice at your own pace, or keep the office running through a timed shift.
+No downloads, accounts, or installation.
 
-| Phone, dark mode | Shift report |
+![Untimed practice in the redesigned repair studio, light mode](docs/play-light.png)
+
+| Home, dark mode | Practice on a phone | Timed shift report |
+| --- | --- | --- |
+| ![Visible question difficulty, play styles, music, and email settings](docs/home-dark-phone.png) | ![The repair desk and inbox in dark mode](docs/play-dark-phone.png) | ![A completed timed shift on a phone](docs/report-dark-phone.png) |
+
+These are real browser screenshots. The game itself uses inline SVG and CSS art;
+it loads no image files.
+
+## Choose your shift
+
+Question difficulty, play style, music, and email tickets are all visible on the
+home screen. There is no settings drawer to discover.
+
+| Question difficulty | How diagnosis changes |
 | --- | --- |
-| ![Playing on a phone in dark mode](docs/play-dark-phone.png) | ![The shift report on a phone in dark mode](docs/report-dark-phone.png) |
+| **Easy** | Plain-language clues, a highlighted component, suggested actions. Practice starts with simple connection faults. |
+| **Medium** | Find the component yourself; plain-language clues and optional hints. Practice adds more two-step cases. |
+| **Hard** | No highlighted faults or workbench hints; choose from four repairs. Practice includes all six devices and three-step cases. |
+| **Extreme** | Interpret technical readings and choose from five repairs, without workbench hints. The timed queue uses Hard's pace. |
 
-## How to play
+- **Practice — no time limit:** no countdown, expiring tickets, score pressure,
+  or automatic arrivals. Finish the current work, then choose **Next case**.
+  Wrong answers explain the mismatch and let you try again. Finish whenever you
+  want; practice does not change timed records, achievements, or upgrade budget.
+- **Timed shift:** work from 9 AM until 5 PM, then survive overtime. Wrong repairs
+  reduce patience; expiration and overflow reduce happiness. Five unhappy users
+  end the shift. Faster fixes, streaks, and VIP requests pay more points.
+- **Daily challenge:** a shared seeded shift with Medium diagnosis and no upgrades.
+- **Endless shift:** start in overtime. There is no scheduled finish, but patience
+  and happiness still run down. Use Practice if you want no time pressure.
 
-- Pick your day before you clock in: **Casual Friday**, **Nine to Five** or
-  **Monday**. Harder days pay more points, and each keeps its own best score.
-- Tickets pile up in the queue. The highlighted one is the most urgent.
-- Pick a fix with the buttons or keys **1–5**: Restart it, Reset password,
-  Check connection, Install updates, or Not an IT problem.
-- The right fix closes the ticket. Faster fixes score more, streaks multiply
-  your score, and VIP tickets pay double.
-- The wrong fix burns the user's patience. Let a ticket time out or the queue
-  overflow and someone gets unhappy. Five unhappy users and your shift is over.
-- Watch for **junk mail**: closing a scam with "Not an IT problem" pays 1.5x,
-  and letting it time out costs nothing. Some closed tickets **come back**
-  ("RE: …"), and when something catches fire, points double for 8 seconds.
-- Every 10-ticket streak earns a **power charge**. Spend it on ☕ Coffee
-  (**Q**, slows everything for 5s), 📖 Wiki (**W**, reveals every fix) or
-  🤖 Auto-reply (**E**, closes the most urgent ticket).
-- The **Daily Shift** is the same seeded storm for everyone, once a day, one
-  try — copy your result and compare. The **Night Shift** starts at 5 PM at
-  full heat: survive as long as you can.
-- Learn the **regulars**: Gary is always locked out, Frank's connection is
-  always down, and Jules the intern usually figures it out alone. On Mondays,
-  the projector dies before the all-hands — a **three-step boss ticket**.
-- Now and then **a person walks up to your counter carrying their machine** —
-  a smoking laptop, a jammed printer, a cracked phone, a monitor with no
-  signal, a beeping server rack, a haunted conference TV. They stand there,
-  device in hand, complaint in a speech bubble, and take two or three fixes
-  in the right order — like treating a patient. Fixed, they walk off happy;
-  ignored, they storm out. They pay extra.
-- The **Online tickets** switch on the start screen picks your job: ON means
-  emails flood in while people walk up; OFF means walk-ins only — just you and
-  the bench, and they come fast.
-- Shifts earn **IT budget** (score ÷ 10). Spend it in the **supply closet** on
-  permanent upgrades: a second coffee pot, Jules part-time, an indexed wiki,
-  an ergonomic chair. Upgrades apply everywhere except the Daily, which stays
-  fair for everyone.
-- Every sender has a **face**: generated avatars for the whole office, custom
-  looks for the regulars and the CEO, and a fish on the hook for phishing.
-- Eleven **achievements** to unlock, "notes from your manager" after every
-  shift, and an **employee file** tracking your whole career.
-- First day? There's a 90-second **training** on the start screen.
-- The **lofi radio** is synthesized live, no audio files: Off, Auto, Slow,
-  Medium or Fast. Auto matches the day — Mondays get fast music.
-- **↑/↓** change which ticket you're working, **P** or **Esc** pauses, and the
-  speaker button mutes the (synthesized, dependency-free) sound.
+Switch **Email tickets** off for walk-ins only. **Music** has Off, Auto, Slow,
+Medium, and Fast settings; all audio is synthesized live.
 
-Works with keyboard, mouse or touch, on phones and desktops, in light and
-dark mode.
+## Work at the desk
 
-## Running it locally
+1. Click a visitor to inspect their device. Read their complaint and examine the
+   screen, connections, power controls, and access indicators. Front and rear
+   views have numbered hotspots and equivalent labeled buttons.
+2. Choose the best next action: **Restart safely**, **Recover access**,
+   **Check connection**, **Verified update**, or **Route / report**. A repair may
+   need two or three actions in order. Findings change after each step.
+3. Read the result. A successful step explains why it worked; the next fault may
+   only become visible after the first is resolved. Completion stays visible
+   until you close the workbench.
+4. Select email requests in the workstation inbox and use the same repair bar.
+   Suspicious messages go to the reporting workflow; never follow their links.
 
-No build step, no dependencies. Serve the folder with any static file server:
+Timed play also has returning requests, familiar office regulars, a multi-stage
+projector incident, powers, upgrades, and career achievements. The queue meter
+shows workload directly; there is no rising-water overlay.
 
-```bash
-python3 -m http.server 8000
-```
+**Keyboard:** 1–5 chooses a repair, ↑/↓ selects tickets, P or Esc pauses. In the
+workbench, inspect a component before using a repair shortcut. Q/W/E activates
+Coffee/Wiki/Auto-reply in timed play when you have a charge. The speaker button
+toggles sound. **How to play** opens a guided training shift.
 
-Then open http://localhost:8000.
+Works with keyboard, mouse, and touch, in light and dark mode. Motion respects
+the system's reduced-motion preference.
 
-## Tests
+The scenarios teach the best next action for stated evidence, not a universal
+fix for every similar symptom. See the [case accuracy audit](docs/case-audit.md).
 
-The game engine (`src/engine.js`) is pure: no DOM, no `Date.now()`, no
-`Math.random()`. Time comes in through `tick(game, dt)` and randomness from a
-seeded generator, so every game can be replayed and tested in Node:
+## Running locally
 
-```bash
-node --test
-```
+Plain HTML/CSS/JavaScript ES modules. No build step or dependencies:
 
-CI runs the same tests on every push.
+    python3 -m http.server 8000
+
+Open http://localhost:8000. Run the tests with:
+
+    node --test
+
+CI runs the same tests on every push. The timed engine is pure and seeded; the
+untimed practice controller is separate. The original engine file is unchanged.
 
 ## Project layout
 
-| Path | What it is |
+| Path | Purpose |
 | --- | --- |
-| `index.html` | The page: HUD, queue, overlays, fix bar |
-| `src/engine.js` | The whole game, minus the screen (pure, seeded, testable) |
-| `src/main.js` | Rendering, input and animation; the only file that touches the DOM |
-| `src/tickets.js` | Every ticket in the game, each with exactly one right fix |
-| `src/icons.js` | Inline SVG icons |
-| `src/sound.js` | All sound, synthesized with WebAudio — no audio files |
-| `src/styles.css` | All styling: layout, themes, animation |
-| `test/engine.test.js` | Engine test suite (`node --test`) |
+| index.html | Home, office, HUD, workbench, and overlays |
+| src/engine.js | Existing pure timed-game engine |
+| src/practice.js | Untimed sessions with manual case progression |
+| src/main.js | Rendering, input, animation, and session integration |
+| src/tickets.js | Authored complaints, existing fix IDs, and repair sequences |
+| src/inspection.js | Read-only component findings for every repair stage |
+| src/challenges.js | Diagnosis levels, evidence presentation, and saved-level migration |
+| src/icons.js | Original inline SVG room, people, devices, and desk art |
+| src/styles.css | Layout, themes, and animation |
+| src/sound.js | Synthesized audio |
+| test/ | Engine, inspection, challenge, and practice tests |
 
-See [ROADMAP.md](ROADMAP.md) for what's built and what's next.
+See [design notes](docs/hands-on-design.md), [verification](docs/visual-verification.md),
+and [ROADMAP.md](ROADMAP.md).
 
 ## License
 

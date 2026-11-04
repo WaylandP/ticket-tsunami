@@ -1,5 +1,5 @@
 import {
-  FIXES, MAX_QUEUE, MAX_CSAT, SHIFT_MS, DEFAULT_DIFFICULTY,
+  FIXES as ENGINE_FIXES, MAX_QUEUE, MAX_CSAT, SHIFT_MS, DEFAULT_DIFFICULTY,
   POWERS, ACHIEVEMENTS,
   createGame, tick, applyFix, usePower, mostUrgent, multiplier, clock, summary,
   evaluateAchievements, shiftInsights,
@@ -7,6 +7,7 @@ import {
 import { FIX_ICONS, POWER_ICONS, face, avatar, personSVG, roomSVG, deskSVG, homeHeroSVG, inspectionDeviceSVG, DEVICE_NAMES, DEVICE_HOTSPOTS } from './icons.js';
 import { inspectionFor, INSPECTION_ZONES } from './inspection.js';
 import { CHALLENGES, challengeFor, challengeBestKey, evidenceFor } from './challenges.js';
+import { createPractice, applyPracticeFix, nextPracticeCase } from './practice.js';
 import { play, setMuted, isMuted, music } from './sound.js';
 
 const $ = (id) => document.getElementById(id);
@@ -20,18 +21,19 @@ $('home-art').innerHTML = homeHeroSVG();
 const screens = { start: $('start-screen'), pause: $('pause-screen'), over: $('over-screen'), stats: $('stats-screen'), shop: $('shop-screen') };
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-const SHORT = { restart: 'Restart', password: 'Password', connect: 'Connection', update: 'Update', notit: 'Not IT' };
+const FIXES = ENGINE_FIXES.map(f => ({ ...f, label: ({ restart: 'Restart safely', password: 'Recover access', connect: 'Check connection', update: 'Verified update', notit: 'Route / report' })[f.id] }));
+const SHORT = { restart: 'Restart', password: 'Access', connect: 'Connection', update: 'Update', notit: 'Route / report' };
 const FIX_LABEL = Object.fromEntries(FIXES.map((f) => [f.id, f.label]));
 
 let game = null;
 let running = false;
 let mode = 'free'; // 'free' | 'daily' | 'tutorial' | 'endless'
 const COACH = {
-  restart: 'Frozen and unresponsive? Click Restart it — or press 1.',
-  password: 'Locked out means a password reset. That’s 2.',
+  restart: 'The approved recovery step is restart, with work saved. Press 1.',
+  password: 'Identity verified? Follow approved access recovery. Press 2.',
   connect: 'Nothing loads, cable on the floor… Check connection. Press 3.',
-  update: 'Software from 2019 wants an update. Press 4.',
-  notit: 'A sad coffee machine is tragic — but Not an IT problem. Press 5.',
+  update: 'A verified update addresses the confirmed issue. Press 4.',
+  notit: 'Route to the responsible team, or report suspicious mail. Press 5.',
 };
 let selectedId = null; // a ticket the player clicked; otherwise we focus the most urgent
 let last = 0;
@@ -57,6 +59,7 @@ function saveDifficulty(id) {
 
 let difficulty = loadDifficulty();
 let activeChallenge = challengeFor(difficulty);
+let sessionChoice = 'practice';
 
 function loadSet(key) {
   try { return new Set(JSON.parse(localStorage.getItem(key)) || []); } catch { return new Set(); }
@@ -101,8 +104,8 @@ function renderOnlineToggle() {
   btn.setAttribute('aria-checked', String(onlinePref));
   btn.classList.toggle('on', onlinePref);
   $('online-sub').textContent = onlinePref
-    ? 'Emails flood in while people walk up.'
-    : 'Walk-ins only. Just you and the bench.';
+    ? 'On · alongside walk-ins'
+    : 'Off · walk-ins only';
 }
 
 // --- the supply closet (shop) ----------------------------------------------------
@@ -341,7 +344,7 @@ function buildPowers() {
 }
 
 function usePowerUI(powerId) {
-  if (!running) return;
+  if (!running || game?.mode === 'practice') return;
   const res = usePower(game, powerId);
   if (res.type === 'none') {
     toast(game.charges <= 0 ? 'No charges — every 10-ticket streak earns one.' : 'Nothing to use that on.');
@@ -380,9 +383,16 @@ function setDifficulty(id) {
     btn.setAttribute('aria-pressed', String(btn.dataset.diff === id));
   }
   $('diff-blurb').textContent = challengeFor(id).description;
-  $('start-btn').setAttribute('aria-label', 'Start playing on ' + challengeFor(id).label);
+  renderSessionChoice();
   renderBest();
 }
+
+function renderSessionChoice() {
+  for (const button of document.querySelectorAll('[data-session]')) button.setAttribute('aria-pressed', String(button.dataset.session === sessionChoice));
+  $('start-btn').innerHTML = (sessionChoice === 'practice' ? 'Start practice' : 'Start shift') + ' <span aria-hidden="true">→</span>';
+  $('start-btn').setAttribute('aria-label', (sessionChoice === 'practice' ? 'Start untimed practice' : 'Start timed shift') + ' · ' + challengeFor(difficulty).label + ' questions');
+}
+for (const button of document.querySelectorAll('[data-session]')) button.addEventListener('click', () => { sessionChoice = button.dataset.session; renderSessionChoice(); });
 
 /** Fill the HUD with five happy faces before the first shift starts. */
 function buildFaces() {
@@ -416,12 +426,15 @@ function startShift(newMode = 'free') {
   const randomSeed = (Date.now() ^ (Math.random() * 1e9)) | 0;
   const opts = { online: onlinePref, perks: ownedPerks() };
   // The Daily is the same storm for everyone: no upgrades, inbox always on.
-  if (mode === 'daily') game = createGame(dailySeed(todayKey()), DEFAULT_DIFFICULTY, 'shift', { online: true });
+  if (mode === 'practice') game = createPractice(randomSeed, difficulty, onlinePref);
+  else if (mode === 'daily') game = createGame(dailySeed(todayKey()), DEFAULT_DIFFICULTY, 'shift', { online: true });
   else if (mode === 'tutorial') game = createGame(randomSeed, DEFAULT_DIFFICULTY, 'tutorial');
   else if (mode === 'endless') game = createGame(randomSeed, activeChallenge.engine, 'endless', opts);
   else game = createGame(randomSeed, activeChallenge.engine, 'shift', opts);
+  app.dataset.session = mode;
+  $('exam-running').textContent = mode === 'practice' ? 'No time limit. Inspect, try a repair, and learn from the result.' : 'The shift keeps running while you inspect.';
   $('empty-big').textContent = game.online ? 'Inbox zero.' : 'Walk-ins only.';
-  $('empty-sub').textContent = game.online ? 'It won’t last.' : 'Your next repair is at reception.';
+  $('empty-sub').textContent = game.online ? (mode === 'practice' ? 'Ready when you are. Choose Next case below.' : 'It won’t last.') : 'Your next repair is at reception.';
   app.classList.toggle('overtime', mode === 'endless');
   coach(null);
   show('play');
@@ -436,6 +449,8 @@ function startShift(newMode = 'free') {
 function goHome() {
   running = false;
   game = null;
+  delete app.dataset.session;
+  $('practice-bar').hidden = true;
   selectedId = null;
   music.stop();
   coach(null);
@@ -481,6 +496,21 @@ function endShift() {
   running = false;
   music.stop();
   coach(null);
+  if (game.mode === 'practice') {
+    $('over-eyebrow').textContent = 'Practice complete · ' + activeChallenge.label;
+    $('over-title').textContent = 'Good work at the desk.';
+    $('r-rank').textContent = 'Learning at your pace';
+    for (const id of ['r-newbest','r-budget','r-badges','r-badge-count','share-btn']) $(id).hidden = true;
+    $('r-score').textContent = 'Untimed';
+    $('r-closed').textContent = game.closed;
+    $('r-acc').textContent = game.practiceCorrect + game.wrong ? Math.round(game.practiceCorrect / (game.practiceCorrect + game.wrong) * 100) + '%' : '—';
+    for (const id of ['r-streak','r-expired','r-self']) $(id).textContent = '—';
+    $('r-insights').hidden = false;
+    $('r-insights').innerHTML = '<li>Practice has no clock, expiry, points, or ranking. Timed records are unchanged.</li>';
+    $('share-text').textContent = '';
+    show('over');
+    return;
+  }
   const s = summary(game);
   const tutorial = s.mode === 'tutorial';
   const endless = s.mode === 'endless';
@@ -572,7 +602,7 @@ function renderBest() {
   const best = loadBest(challengeBestKey(difficulty));
   const line = $('best-line');
   line.hidden = !best;
-  if (best) line.textContent = `Your best ${challengeFor(difficulty).label}: ${best.score.toLocaleString()} points, lasted until ${best.clock}.`;
+  if (best) line.textContent = `Timed best · ${challengeFor(difficulty).label}: ${best.score.toLocaleString()} points, lasted until ${best.clock}.`;
 }
 
 // --- gameplay -------------------------------------------------------------------
@@ -593,7 +623,8 @@ function useFix(fixId, sourceBtn) {
     openInspection(target);
     return;
   }
-  const res = applyFix(game, target.id, fixId);
+  const priorEvidence = target.kind === 'repair' ? inspectionFor(target)?.detail : target.text;
+  const res = game.mode === 'practice' ? applyPracticeFix(game, target.id, fixId) : applyFix(game, target.id, fixId);
   pulse(sourceBtn || document.querySelector(`.fix[data-fix="${fixId}"]`), res.type);
   if (res.type === 'progress') {
     play('charge');
@@ -601,12 +632,14 @@ function useFix(fixId, sourceBtn) {
     const figure = cards.get(res.ticket.id)?.querySelector('.figure');
     if (figure) restartAnim(figure, 'hop');
     render();
-    if (examDialog.open) $('exam-feedback').textContent = 'Repair step completed. Examine the updated device to find the next issue.';
+    if (examDialog.open) $('exam-feedback').textContent = 'Why it worked: ' + priorEvidence + ' Next: inspect the updated device.';
     return;
   }
   if (res.type === 'correct') {
-    removeCard(res.ticket.id, 'out-fixed', `+${res.points}`);
+    if (target.kind !== 'repair') toast(target.kind === 'spam' ? 'Reported for security review. Do not open links or attachments; verify through a known channel.' : 'Resolved: ' + ticketDisplayText(target));
+    removeCard(res.ticket.id, 'out-fixed', game.mode === 'practice' ? 'Restored ✓' : `+${res.points}`);
     if (selectedId === res.ticket.id) selectedId = null;
+    if (examDialog.open && priorEvidence) $('exam-feedback').textContent = 'Device restored. Why it worked: ' + priorEvidence;
     if (game.mode === 'tutorial') coach(null);
     if (res.charge) {
       play('charge');
@@ -621,7 +654,7 @@ function useFix(fixId, sourceBtn) {
     play('wrong');
     const el = cards.get(res.ticket.id);
     if (el) restartAnim(el, 'shake');
-    toast(`${FIX_LABEL[res.tried]} didn’t help.`);
+    toast(`${FIX_LABEL[res.tried]} did not address the evidence. Try another component.`);
     if (examDialog.open) $('exam-feedback').textContent = 'That action did not address the fault. Compare another component with the reported symptom.';
   }
   render();
@@ -683,13 +716,13 @@ function handleEvents(events) {
         break;
       case 'outage':
         play('outage');
-        banner(ev.title, ev.detail);
+        banner(ev.fix === 'password' ? 'Legacy access policy' : ev.title, ev.fix === 'password' ? 'This office still expires credentials. Verify identity before approved recovery.' : ev.detail);
         announce(`${ev.title}. ${ev.detail}`);
         break;
       case 'frenzy':
         play('frenzy');
-        banner('🔥 Something is on fire!', 'Double points for 8 seconds. Go.');
-        announce('Something is on fire. Double points for 8 seconds.');
+        banner('Priority window', 'Double points for 8 seconds.');
+        announce('Priority window. Double points for 8 seconds.');
         break;
       case 'overtime':
         play('bell');
@@ -826,13 +859,13 @@ function finishInspection(id, cls, label) {
 
 function renderInspection() {
   if (!examDialog.open || !game) return;
-  $('exam-clock').textContent = clock(game.t);
+  $('exam-clock').textContent = game.mode === 'practice' ? 'Untimed' : clock(game.t);
   $('exam-inbox').textContent = game.tickets.filter(t => t.kind !== 'repair').length + ' emails waiting';
   const ticket = examTicket();
   if (!ticket || exam.finished) return;
   const model = inspectionFor(ticket);
   if (!model) { closeInspection(); return; }
-  $('exam-patience').textContent = Math.max(0, Math.ceil((ticket.patience - ticket.age) / 1000)) + 's patience';
+  $('exam-patience').textContent = game.mode === 'practice' ? 'Take your time' : Math.max(0, Math.ceil((ticket.patience - ticket.age) / 1000)) + 's patience';
   $('exam-patience').classList.toggle('urgent', ticket.age / ticket.patience > .65);
   const key = ticket.id + ':' + ticket.stage;
   if (key === exam.key) return;
@@ -907,6 +940,15 @@ function renderRoom(t) {
   app.style.setProperty('--clock-minute', `${minute * 6}deg`);
 }
 
+function ticketDisplayText(ticket) {
+  if (ticket.kind !== 'boss') return ticket.text;
+  return [
+    'Projector has no signal. Its video lead is unplugged; hardware is undamaged.',
+    'Link restored. Receiver is stuck; its approved recovery guide calls for restart.',
+    'Receiver responds. A verified firmware update fixes the confirmed fault.',
+  ][ticket.stage] || ticket.text;
+}
+
 function createCard(ticket) {
   const li = document.createElement('li');
   li.className = 'ticket' + (ticket.vip ? ' vip' : '') + (ticket.kind === 'spam' ? ' spam' : '') + (ticket.kind === 'repair' ? ' visitor' : '');
@@ -914,7 +956,7 @@ function createCard(ticket) {
   const chip = ticket.vip ? '<span class="chip chip-vip">VIP · 2x</span>'
     : ticket.kind === 'boss' ? '<span class="chip chip-step chip-boss">Step 1 of 3</span>'
     : ticket.kind === 'repair' ? `<span class="chip chip-step chip-repair">1 of ${ticket.stages.length}</span>`
-    : ticket.kind === 'spam' ? '<span class="chip chip-spam">Sus · 1.5x</span>'
+    : ticket.kind === 'spam' ? '<span class="chip chip-spam">Report for review</span>'
     : ticket.kind === 'reopen' ? '<span class="chip chip-re">Reopened</span>' : '';
   if (ticket.kind === 'repair') {
     // A person walks up to the counter carrying the machine.
@@ -938,7 +980,7 @@ function createCard(ticket) {
 </button>`;
   }
   li.querySelector('.ticket-from').textContent = ticket.from;
-  li.querySelector('.ticket-text').textContent = ticket.text;
+  li.querySelector('.ticket-text').textContent = ticketDisplayText(ticket);
   li.querySelector('.ticket-btn').addEventListener('click', () => {
     selectedId = ticket.id;
     render();
@@ -973,6 +1015,9 @@ function render() {
 
   for (const ticket of game.tickets) {
     const el = cards.get(ticket.id) || createCard(ticket);
+    const textEl = el.querySelector('.ticket-text');
+    const displayText = ticketDisplayText(ticket);
+    if (textEl.textContent !== displayText) textEl.textContent = displayText;
     const left = Math.max(0, 1 - ticket.age / ticket.patience);
     el.style.setProperty('--left', left.toFixed(3));
     el.classList.toggle('urgent', left < 0.35);
@@ -1005,10 +1050,13 @@ function render() {
   }
 
   // HUD
-  $('clock').textContent = clock(game.t);
+  $('clock').textContent = game.mode === 'practice' ? 'Practice' : clock(game.t);
   renderRoom(game.t);
-  $('clock-sub').textContent = activeChallenge.label + ' · ' + (game.t >= SHIFT_MS ? 'Overtime' : 'Until 5 PM');
-  $('score').textContent = game.score.toLocaleString();
+  $('clock-sub').textContent = activeChallenge.label + ' · ' + (game.mode === 'practice' ? 'No time limit' : game.t >= SHIFT_MS ? 'Overtime' : 'Until 5 PM');
+  $('score').textContent = game.mode === 'practice' ? game.closed : game.score.toLocaleString();
+  document.querySelector('.hud-score .hud-label').textContent = game.mode === 'practice' ? 'Completed' : 'Score';
+  $('practice-bar').hidden = game.mode !== 'practice';
+  $('next-case-btn').disabled = game.tickets.length > 0;
   const mult = multiplier(game.streak);
   const multEl = $('mult');
   multEl.hidden = mult === 1;
@@ -1036,12 +1084,12 @@ function render() {
     btn.disabled = !running || game.charges <= 0;
   }
 
-  const n = emails; // the water answers to the inbox; walk-ins stand on dry land
+  const n = emails; // Backlog is conveyed by the count and queue indicators.
   const pips = $('pips').children;
   for (let i = 0; i < pips.length; i++) pips[i].classList.toggle('on', i < n);
   $('pips').dataset.level = n >= MAX_QUEUE - 1 ? 'high' : n >= MAX_QUEUE - 3 ? 'mid' : 'low';
   $('queue-count').textContent = `${n} of ${MAX_QUEUE}`;
-  floodEl.style.setProperty('--level', (n / MAX_QUEUE).toFixed(3));
+  floodEl.hidden = true;
   renderInspection();
 }
 
@@ -1077,7 +1125,7 @@ function frame(now) {
   const dt = Math.min(100, now - last);
   last = now;
   if (running && game) {
-    handleEvents(tick(game, dt));
+    if (game.mode !== 'practice') handleEvents(tick(game, dt));
     render();
   }
   requestAnimationFrame(frame);
@@ -1121,7 +1169,9 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) pause();
 });
 
-$('start-btn').addEventListener('click', () => startShift('free'));
+$('start-btn').addEventListener('click', () => startShift(sessionChoice));
+$('next-case-btn').addEventListener('click', () => { if (game && nextPracticeCase(game)) { selectedId = null; render(); } });
+$('practice-finish-btn').addEventListener('click', () => { if (game?.mode === 'practice') { game.phase = 'over'; endShift(); } });
 $('daily-btn').addEventListener('click', () => startShift('daily'));
 $('endless-btn').addEventListener('click', () => startShift('endless'));
 $('tutorial-btn').addEventListener('click', () => startShift('tutorial'));
@@ -1134,7 +1184,7 @@ $('online-toggle').addEventListener('click', () => {
   try { localStorage.setItem('ticket-tsunami:online', onlinePref ? '1' : '0'); } catch { /* fine */ }
   renderOnlineToggle();
 });
-$('again-btn').addEventListener('click', () => startShift('free'));
+$('again-btn').addEventListener('click', () => startShift(mode === 'practice' ? 'practice' : 'free'));
 $('menu-btn').addEventListener('click', goHome);
 $('pause-btn').addEventListener('click', pause);
 
