@@ -31,7 +31,7 @@ A box gets checked only when the work is built, tested and visible in the game.
 - [x] Walk-in repairs: users carry the machine to your desk; two fixes in order, extra pay
 - [x] Art pass: illustrated animated devices (laptop, printer, phone, monitor) and generated avatars for every sender
 
-- [x] The bench: walk-ins stand in their own strip at the top of the floor, machines in hand
+- [x] The counter: full-body characters walk up holding their machines, complaint in a speech bubble, and walk off when treated
 - [x] Online tickets switch: emails + walk-ins, or walk-ins only (and they hurry)
 - [x] The supply closet: shifts earn IT budget (score ÷ 10), spent on permanent upgrades — coffee pot, Jules part-time, indexed wiki, ergonomic chair (never applies to the Daily)
 - [x] Big three-step machines: the beeping server rack and the haunted conference TV

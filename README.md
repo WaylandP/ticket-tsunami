@@ -38,11 +38,12 @@ swinging in overtime.
 - Learn the **regulars**: Gary is always locked out, Frank's connection is
   always down, and Jules the intern usually figures it out alone. On Mondays,
   the projector dies before the all-hands — a **three-step boss ticket**.
-- Now and then someone **walks in carrying the machine** — a smoking laptop, a
-  jammed printer, a cracked phone, a monitor with no signal, a beeping server
-  rack, a haunted conference TV. Walk-ins stand at **the bench** at the top of
-  the floor and take two or three fixes in the right order, like treating a
-  patient. They pay extra.
+- Now and then **a person walks up to your counter carrying their machine** —
+  a smoking laptop, a jammed printer, a cracked phone, a monitor with no
+  signal, a beeping server rack, a haunted conference TV. They stand there,
+  device in hand, complaint in a speech bubble, and take two or three fixes
+  in the right order — like treating a patient. Fixed, they walk off happy;
+  ignored, they storm out. They pay extra.
 - The **Online tickets** switch on the start screen picks your job: ON means
   emails flood in while people walk up; OFF means walk-ins only — just you and
   the bench, and they come fast.
