@@ -73,61 +73,36 @@
     </section>
 
     <section class="overlay overlay-start" id="start-screen" aria-labelledby="start-title">
-      <div class="start-layout">
-        <div class="card tile hero-tile">
-          <p class="eyebrow">A help desk survival game</p>
-          <h1 id="start-title" class="title">Ticket<br>Tsunami</h1>
-          <p class="lede">It’s 9 AM. You’re the only one on the help desk. The tickets are coming.</p>
+      <div class="start-layout home-shell">
+        <header class="home-mast"><span class="home-wordmark"><span aria-hidden="true">✚</span> DEVICE CARE</span><span class="home-status">IT support. Under pressure.</span></header>
+        <div class="home-copy">
+          <p class="eyebrow">THE HELP-DESK SURVIVAL GAME</p>
+          <h1 id="start-title" class="title">Ticket<br><span>Tsunami</span><span class="title-dot" aria-hidden="true">.</span></h1>
+          <p class="home-lede">Their tech is broken. <br>Your shift just started.</p>
+          <p class="home-description">Inspect devices. Solve IT problems.<br>Keep the office running.</p>
+        </div>
+        <div class="home-art-wrap"><div id="home-art"></div><p class="home-art-caption">LISTEN <span aria-hidden="true">→</span> INSPECT <span aria-hidden="true">→</span> FIX</p></div>
+        <section class="home-launch" aria-labelledby="diff-label">
+          <div class="launch-heading"><span class="launch-number" aria-hidden="true">01</span><div><p class="eyebrow">READY FOR YOUR SHIFT?</p><h2 id="diff-label">Choose your difficulty</h2></div></div>
           <div class="diff-wrap">
-            <p class="hud-label" id="diff-label">Pick your day</p>
-            <div class="diff" id="diff" role="group" aria-labelledby="diff-label"></div>
-            <p class="diff-blurb" id="diff-blurb"></p>
+            <div class="diff" id="diff" role="group" aria-labelledby="diff-label" aria-describedby="diff-blurb"></div>
+            <p class="diff-blurb" id="diff-blurb" aria-live="polite"></p>
           </div>
-          <button type="button" class="btn btn-primary" id="start-btn">Start shift</button>
+          <div class="home-launch-row"><button type="button" class="btn btn-primary" id="start-btn">Start playing <span aria-hidden="true">→</span></button><button type="button" class="btn btn-ghost" id="tutorial-btn">How to play</button></div>
+          <p class="launch-note">Choose a ticket. Inspect the device. Find the fix.</p>
           <p class="best" id="best-line" hidden></p>
-        </div>
-
-        <div class="card tile howto-tile">
-          <p class="hud-label">How it works</p>
-          <ul class="howto">
-            <li><span class="howto-key">1–5</span><span>Read the ticket at the top of the pile and pick the fix that solves it.</span></li>
-            <li><span class="howto-key">Fast</span><span>Faster fixes and streaks score more. VIP tickets score double.</span></li>
-            <li><span class="howto-key">Don’t</span><span>let tickets time out or the queue overflow. Five unhappy users and you’re done.</span></li>
-          </ul>
-        </div>
-
-        <div class="mode-tiles">
-          <button type="button" class="card tile btn-mode" id="daily-btn">
-            <span class="mode-title">🌊 Daily · <span id="daily-date"></span></span>
-            <span class="mode-sub" id="daily-sub">Same storm for everyone. One try.</span>
-          </button>
-          <button type="button" class="card tile btn-mode" id="endless-btn">
-            <span class="mode-title">🌙 Night Shift</span>
-            <span class="mode-sub">Start at 5 PM. Survive.</span>
-          </button>
-        </div>
-
-        <div class="card tile radio-tile">
-          <div class="pref-row">
-            <p class="hud-label" id="music-label">Lofi radio</p>
-            <div class="music" id="music" role="group" aria-labelledby="music-label"></div>
-          </div>
-          <div class="pref-row pref-toggle-row">
-            <p class="hud-label" id="online-label">Online tickets</p>
-            <button type="button" class="switch" id="online-toggle" role="switch" aria-checked="true" aria-labelledby="online-label">
-              <span class="switch-thumb" aria-hidden="true"></span>
-            </button>
-            <p class="pref-sub" id="online-sub">Emails flood in while people walk up.</p>
-          </div>
-        </div>
-
-        <p class="links-row">
-          <button type="button" class="btn-link" id="tutorial-btn">Training</button>
-          <span class="dot" aria-hidden="true">·</span>
-          <button type="button" class="btn-link" id="stats-btn">Your career</button>
-          <span class="dot" aria-hidden="true">·</span>
-          <button type="button" class="btn-link" id="shop-btn">Supply closet</button>
-        </p>
+        </section>
+        <footer class="home-footer">
+          <details class="home-settings home-extras"><summary>More modes</summary><div class="home-settings-panel">
+            <button type="button" class="btn-mode" id="daily-btn"><span class="mode-title">Daily challenge · <span id="daily-date"></span></span><span class="mode-sub" id="daily-sub">Same cases for everyone. One try.</span></button>
+            <button type="button" class="btn-mode" id="endless-btn"><span class="mode-title">Endless shift</span><span class="mode-sub">Start at 5 PM. Survive as long as you can.</span></button>
+          </div></details>
+          <button type="button" class="btn-link" id="stats-btn">Stats</button><button type="button" class="btn-link" id="shop-btn">Upgrades</button>
+          <details class="home-settings"><summary>Settings</summary><div class="home-settings-panel">
+            <div class="pref-row"><p class="hud-label" id="music-label">Music</p><div class="music" id="music" role="group" aria-labelledby="music-label"></div></div>
+            <div class="pref-row pref-toggle-row"><p class="hud-label" id="online-label">Email queue</p><button type="button" class="switch" id="online-toggle" role="switch" aria-checked="true" aria-labelledby="online-label"><span class="switch-thumb" aria-hidden="true"></span></button><p class="pref-sub" id="online-sub">Emails arrive alongside walk-ins.</p></div>
+          </div></details>
+        </footer>
       </div>
     </section>
 
@@ -201,8 +176,39 @@
   </div>
 </div>
 
+<dialog class="exam-dialog" id="exam-dialog" aria-labelledby="exam-title" aria-describedby="exam-running">
+  <div class="exam-shell">
+    <div class="exam-top">
+    <header class="exam-header">
+      <div><p class="eyebrow">Device Care / Examination</p><h2 id="exam-title">At the workbench</h2></div>
+      <button type="button" class="icon-btn" id="exam-close" aria-label="Return to reception">×</button>
+    </header>
+    <div class="exam-live"><span id="exam-clock"></span><span id="exam-patience"></span><span id="exam-inbox"></span><button type="button" class="btn-link" id="exam-pause">Pause</button></div>
+    </div>
+    <p id="exam-running" class="exam-running">The shift keeps running while you inspect.</p>
+    <div class="exam-patient"><span id="exam-avatar" aria-hidden="true"></span><div><strong id="exam-from"></strong><p id="exam-complaint"></p></div><span class="chip chip-repair" id="exam-step"></span></div>
+    <div class="exam-body">
+      <section class="exam-stage" aria-label="Device on the workbench">
+        <div class="exam-view-switch" role="group" aria-label="Device view"><button type="button" data-exam-view="front" aria-pressed="true">Front</button><button type="button" data-exam-view="rear" aria-pressed="false">Connections</button></div>
+        <div class="exam-canvas"><div id="exam-device"></div><div id="exam-hotspots"></div></div>
+        <p class="exam-stage-caption">Tap a numbered part to examine it.</p>
+      </section>
+      <section class="exam-notes" aria-label="Inspection notes">
+        <p class="hud-label">Examine a component</p>
+        <div class="exam-zones" id="exam-zones"></div>
+        <div class="exam-finding" id="exam-finding" role="status" aria-live="polite"><strong id="exam-finding-title">Start with what you can see.</strong><p id="exam-finding-detail">Compare the device with the person’s description. Pick a component to inspect.</p></div>
+        <button type="button" class="btn btn-primary" id="exam-action" hidden></button>
+        <div class="exam-actions" id="exam-actions" role="group" aria-label="Choose a repair" hidden></div>
+        <details class="exam-assist"><summary>Need a hint?</summary><p id="exam-hint"></p></details>
+        <p class="exam-feedback" id="exam-feedback" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="sr-only" id="announcer" aria-live="assertive"></div>
 <script type="module" src="src/main.js"></script>
 </body>
 </html>
+

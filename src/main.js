@@ -1,10 +1,12 @@
 import {
-  FIXES, MAX_QUEUE, MAX_CSAT, SHIFT_MS, DIFFICULTIES, DEFAULT_DIFFICULTY,
+  FIXES, MAX_QUEUE, MAX_CSAT, SHIFT_MS, DEFAULT_DIFFICULTY,
   POWERS, ACHIEVEMENTS,
   createGame, tick, applyFix, usePower, mostUrgent, multiplier, clock, summary,
-  difficultyFor, evaluateAchievements, shiftInsights,
+  evaluateAchievements, shiftInsights,
 } from './engine.js';
-import { FIX_ICONS, POWER_ICONS, face, avatar, personSVG, roomSVG, deskSVG } from './icons.js';
+import { FIX_ICONS, POWER_ICONS, face, avatar, personSVG, roomSVG, deskSVG, homeHeroSVG, inspectionDeviceSVG, DEVICE_NAMES, DEVICE_HOTSPOTS } from './icons.js';
+import { inspectionFor, INSPECTION_ZONES } from './inspection.js';
+import { CHALLENGES, challengeFor, challengeBestKey, evidenceFor } from './challenges.js';
 import { play, setMuted, isMuted, music } from './sound.js';
 
 const $ = (id) => document.getElementById(id);
@@ -14,6 +16,7 @@ const benchEl = $('bench');
 const floodEl = $('flood');
 $('room-art').innerHTML = roomSVG();
 $('desk-art').innerHTML = deskSVG();
+$('home-art').innerHTML = homeHeroSVG();
 const screens = { start: $('start-screen'), pause: $('pause-screen'), over: $('over-screen'), stats: $('stats-screen'), shop: $('shop-screen') };
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -45,14 +48,15 @@ function saveBest(diffId, best) {
 function loadDifficulty() {
   try {
     const id = localStorage.getItem('ticket-tsunami:difficulty');
-    return DIFFICULTIES.some((d) => d.id === id) ? id : DEFAULT_DIFFICULTY;
-  } catch { return DEFAULT_DIFFICULTY; }
+    return challengeFor(id).id;
+  } catch { return 'easy'; }
 }
 function saveDifficulty(id) {
   try { localStorage.setItem('ticket-tsunami:difficulty', id); } catch { /* private mode etc. */ }
 }
 
 let difficulty = loadDifficulty();
+let activeChallenge = challengeFor(difficulty);
 
 function loadSet(key) {
   try { return new Set(JSON.parse(localStorage.getItem(key)) || []); } catch { return new Set(); }
@@ -207,7 +211,7 @@ function resolveTempo() {
   if (mode === 'tutorial') return 'slow';
   if (mode === 'endless') return 'fast';
   if (mode === 'daily') return 'medium';
-  return { friday: 'slow', nineToFive: 'medium', monday: 'fast' }[difficulty] || 'medium';
+  return { easy: 'slow', medium: 'medium', hard: 'fast', extreme: 'fast' }[difficulty] || 'medium';
 }
 
 function startMusic() {
@@ -355,12 +359,13 @@ function usePowerUI(powerId) {
 
 function buildDiffPicker() {
   const row = $('diff');
-  for (const d of DIFFICULTIES) {
+  for (const d of CHALLENGES) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'diff-btn';
     btn.dataset.diff = d.id;
-    btn.textContent = d.label;
+    btn.innerHTML = `<span class="difficulty-level" aria-hidden="true">${CHALLENGES.map((_, i) => `<i class="${i <= CHALLENGES.indexOf(d) ? 'lit' : ''}"></i>`).join('')}</span><strong>${d.label}</strong><span class="difficulty-tag">${d.tag}</span><span class="difficulty-check" aria-hidden="true">✓</span>`;
+    btn.setAttribute('aria-label', d.label + ': ' + d.tag);
     btn.setAttribute('aria-pressed', 'false');
     btn.addEventListener('click', () => setDifficulty(d.id));
     row.append(btn);
@@ -369,12 +374,13 @@ function buildDiffPicker() {
 }
 
 function setDifficulty(id) {
-  difficulty = id;
-  saveDifficulty(id);
+  difficulty = challengeFor(id).id;
+  saveDifficulty(difficulty);
   for (const btn of document.querySelectorAll('.diff-btn')) {
     btn.setAttribute('aria-pressed', String(btn.dataset.diff === id));
   }
-  $('diff-blurb').textContent = difficultyFor(id).blurb;
+  $('diff-blurb').textContent = challengeFor(id).description;
+  $('start-btn').setAttribute('aria-label', 'Start playing on ' + challengeFor(id).label);
   renderBest();
 }
 
@@ -389,6 +395,7 @@ function buildFaces() {
 // --- screens ----------------------------------------------------------------------
 
 function show(name) {
+  if (name !== 'play') closeInspection();
   app.dataset.screen = name;
   for (const [key, el] of Object.entries(screens)) el.hidden = key !== name;
   const focusTarget = { start: 'start-btn', pause: 'resume-btn', over: 'again-btn', stats: 'stats-back-btn', shop: 'shop-back-btn' }[name];
@@ -398,6 +405,8 @@ function show(name) {
 function startShift(newMode = 'free') {
   if (newMode === 'daily' && loadDaily()) return; // one try a day
   mode = newMode;
+  activeChallenge = challengeFor(mode === 'daily' ? 'medium' : mode === 'tutorial' ? 'easy' : difficulty);
+  for (const details of document.querySelectorAll('.home-settings')) details.open = false;
   for (const el of cards.values()) el.remove();
   cards.clear();
   queueEl.replaceChildren();
@@ -409,8 +418,8 @@ function startShift(newMode = 'free') {
   // The Daily is the same storm for everyone: no upgrades, inbox always on.
   if (mode === 'daily') game = createGame(dailySeed(todayKey()), DEFAULT_DIFFICULTY, 'shift', { online: true });
   else if (mode === 'tutorial') game = createGame(randomSeed, DEFAULT_DIFFICULTY, 'tutorial');
-  else if (mode === 'endless') game = createGame(randomSeed, difficulty, 'endless', opts);
-  else game = createGame(randomSeed, difficulty, 'shift', opts);
+  else if (mode === 'endless') game = createGame(randomSeed, activeChallenge.engine, 'endless', opts);
+  else game = createGame(randomSeed, activeChallenge.engine, 'shift', opts);
   $('empty-big').textContent = game.online ? 'Inbox zero.' : 'Walk-ins only.';
   $('empty-sub').textContent = game.online ? 'It won’t last.' : 'Your next repair is at reception.';
   app.classList.toggle('overtime', mode === 'endless');
@@ -475,7 +484,7 @@ function endShift() {
   const s = summary(game);
   const tutorial = s.mode === 'tutorial';
   const endless = s.mode === 'endless';
-  const bestKey = endless ? `endless:${s.difficulty}` : s.difficulty;
+  const bestKey = challengeBestKey(activeChallenge.id, endless);
   const best = tutorial ? null : loadBest(bestKey);
   const isBest = !best || s.score > best.score;
   if (!tutorial && isBest && s.score > 0) saveBest(bestKey, { score: s.score, clock: s.clock, rank: s.rank });
@@ -517,7 +526,7 @@ function endShift() {
 
   // Notes from your manager.
   const notes = tutorial
-    ? ['Training complete. Now try a Casual Friday — the tickets won’t be this polite.']
+    ? ['Training complete. Now try Easy mode — the tickets won’t be this polite.']
     : shiftInsights(s);
   const insightsEl = $('r-insights');
   insightsEl.hidden = !notes.length;
@@ -528,8 +537,8 @@ function endShift() {
   }));
 
   const dayLabel = tutorial ? 'Training'
-    : endless ? `Night Shift · ${s.difficultyLabel}`
-    : mode === 'daily' ? `Daily Shift · ${dailyLabel()}` : s.difficultyLabel;
+    : endless ? `Night Shift · ${activeChallenge.label}`
+    : mode === 'daily' ? `Daily Shift · ${dailyLabel()}` : activeChallenge.label;
   $('over-eyebrow').textContent = `Shift report · ${dayLabel}${s.madeItToFive && !endless && !tutorial ? ' · Overtime survivor' : ''}`;
   $('over-title').innerHTML = tutorial
     ? 'You’re ready for the real thing'
@@ -551,19 +560,19 @@ function endShift() {
 
 function shareText(s) {
   if (s.mode === 'endless') {
-    return `Ticket Tsunami Night Shift (${s.difficultyLabel}): survived until ${s.clock}, closed ${s.closed} tickets, ${s.score.toLocaleString()} points. Rank: ${s.rank}.`;
+    return `Ticket Tsunami Night Shift (${activeChallenge.label}): survived until ${s.clock}, closed ${s.closed} tickets, ${s.score.toLocaleString()} points. Rank: ${s.rank}.`;
   }
   if (mode === 'daily') {
     return `Ticket Tsunami Daily · ${dailyLabel()}\n🌊 Lasted until ${s.clock} · ${s.score.toLocaleString()} pts\n🎫 ${s.closed} closed · 🎯 ${s.accuracy}% · 🔥 streak ${s.bestStreak}\nRank: ${s.rank}\nhttps://ticket-tsunami.vercel.app`;
   }
-  return `Ticket Tsunami (${s.difficultyLabel}): lasted until ${s.clock}, closed ${s.closed} tickets, ${s.score.toLocaleString()} points, best streak ${s.bestStreak}. Rank: ${s.rank}.`;
+  return `Ticket Tsunami (${activeChallenge.label}): lasted until ${s.clock}, closed ${s.closed} tickets, ${s.score.toLocaleString()} points, best streak ${s.bestStreak}. Rank: ${s.rank}.`;
 }
 
 function renderBest() {
-  const best = loadBest(difficulty);
+  const best = loadBest(challengeBestKey(difficulty));
   const line = $('best-line');
   line.hidden = !best;
-  if (best) line.textContent = `Your best ${difficultyFor(difficulty).label}: ${best.score.toLocaleString()} points, lasted until ${best.clock}.`;
+  if (best) line.textContent = `Your best ${challengeFor(difficulty).label}: ${best.score.toLocaleString()} points, lasted until ${best.clock}.`;
 }
 
 // --- gameplay -------------------------------------------------------------------
@@ -580,6 +589,10 @@ function useFix(fixId, sourceBtn) {
     toast('No tickets right now. Enjoy it while it lasts.');
     return;
   }
+  if (target.kind === 'repair' && inspectionFor(target) && !examDialog.open) {
+    openInspection(target);
+    return;
+  }
   const res = applyFix(game, target.id, fixId);
   pulse(sourceBtn || document.querySelector(`.fix[data-fix="${fixId}"]`), res.type);
   if (res.type === 'progress') {
@@ -588,6 +601,7 @@ function useFix(fixId, sourceBtn) {
     const figure = cards.get(res.ticket.id)?.querySelector('.figure');
     if (figure) restartAnim(figure, 'hop');
     render();
+    if (examDialog.open) $('exam-feedback').textContent = 'Repair step completed. Examine the updated device to find the next issue.';
     return;
   }
   if (res.type === 'correct') {
@@ -608,6 +622,7 @@ function useFix(fixId, sourceBtn) {
     const el = cards.get(res.ticket.id);
     if (el) restartAnim(el, 'shake');
     toast(`${FIX_LABEL[res.tried]} didn’t help.`);
+    if (examDialog.open) $('exam-feedback').textContent = 'That action did not address the fault. Compare another component with the reported symptom.';
   }
   render();
 }
@@ -691,6 +706,194 @@ function handleEvents(events) {
   }
 }
 
+
+// --- hands-on inspection: presentation over the existing repair engine --------
+const examDialog = $('exam-dialog');
+const exam = { id: null, view: 'front', zone: null, key: '', finished: false, returnFocus: null };
+
+function openInspection(ticket) {
+  if (!running || ticket?.kind !== 'repair' || !inspectionFor(ticket)) return;
+  exam.returnFocus = document.activeElement;
+  exam.id = ticket.id;
+  exam.view = 'front';
+  exam.zone = null;
+  exam.key = '';
+  exam.finished = false;
+  $('exam-feedback').textContent = '';
+  selectedId = ticket.id;
+  if (!examDialog.open) examDialog.showModal();
+  renderInspection();
+}
+
+function closeInspection() {
+  const restore = exam.returnFocus;
+  if (examDialog.open) examDialog.close();
+  exam.id = null;
+  exam.key = '';
+  exam.finished = false;
+  exam.returnFocus = null;
+  if (restore?.isConnected) restore.focus({ preventScroll: true });
+}
+
+function examTicket() {
+  return game?.tickets.find(t => t.id === exam.id);
+}
+
+function renderExamDevice(ticket, model) {
+  $('exam-device').innerHTML = inspectionDeviceSVG(ticket.device, model, exam.view);
+  const positions = DEVICE_HOTSPOTS[ticket.device];
+  const visible = exam.view === 'rear' ? ['ports'] : (ticket.device === 'phone' ? ['screen', 'power', 'security', 'ports'] : ['screen', 'power', 'security']);
+  $('exam-hotspots').replaceChildren(...visible.map(zone => {
+    const button = document.createElement('button');
+    const index = INSPECTION_ZONES.findIndex(z => z.id === zone);
+    // Keep 44px controls beside the evidence: never cover a status label or loose plug.
+    const [x, y] = exam.view === 'rear' ? (ticket.device === 'phone' ? [445, 320] : [520, 210]) : positions[zone];
+    button.type = 'button';
+    button.className = 'exam-hotspot' + (activeChallenge.guided && zone === model.zone ? ' guided' : '');
+    button.textContent = String(index + 1);
+    button.setAttribute('aria-label', 'Inspect ' + INSPECTION_ZONES[index].label);
+    button.setAttribute('aria-pressed', String(exam.zone === zone));
+    button.style.left = (x / 640 * 100) + '%';
+    button.style.top = (y / 400 * 100) + '%';
+    button.addEventListener('click', () => inspectZone(zone));
+    return button;
+  }));
+  for (const button of examDialog.querySelectorAll('[data-exam-view]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.examView === exam.view));
+  }
+}
+
+function inspectZone(zoneId) {
+  const ticket = examTicket();
+  if (!ticket || exam.finished) return;
+  const model = inspectionFor(ticket);
+  const zone = model?.zones.find(z => z.id === zoneId);
+  if (!zone) return;
+  exam.zone = zoneId;
+  exam.view = zoneId === 'ports' && ticket.device !== 'phone' ? 'rear' : 'front';
+  renderExamDevice(ticket, model);
+  const evidence = evidenceFor(model, zone, activeChallenge);
+  $('exam-finding-title').textContent = evidence.title;
+  $('exam-finding-detail').textContent = evidence.detail;
+  $('exam-finding').classList.toggle('has-finding', zone.finding && activeChallenge.hints);
+  $('exam-action').hidden = activeChallenge.choices;
+  $('exam-actions').hidden = !activeChallenge.choices;
+  $('exam-actions').replaceChildren(...(activeChallenge.raw ? FIXES : FIXES.filter(f => f.id !== 'notit')).map(fix => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-ghost';
+    button.dataset.fix = fix.id;
+    button.textContent = fix.label;
+    button.addEventListener('click', () => {
+      if (!examTicket() || exam.finished || !exam.zone) return;
+      selectedId = exam.id;
+      useFix(fix.id, button);
+    });
+    return button;
+  }));
+  $('exam-action').disabled = false;
+  $('exam-action').textContent = zone.label;
+  $('exam-action').dataset.fix = zone.fix;
+  $('exam-action').setAttribute('aria-label', zone.label + ' on ' + DEVICE_NAMES[ticket.device]);
+  for (const button of $('exam-zones').children) {
+    button.setAttribute('aria-pressed', String(button.dataset.zone === zoneId));
+  }
+  if (window.matchMedia('(max-width: 700px)').matches) {
+    (activeChallenge.choices ? $('exam-actions') : $('exam-action')).scrollIntoView({ block: 'nearest', behavior: reduceMotion.matches ? 'instant' : 'smooth' });
+  }
+}
+
+function finishInspection(id, cls, label) {
+  if (!examDialog.open || exam.id !== id || exam.finished) return;
+  exam.finished = true;
+  $('exam-action').hidden = true;
+  $('exam-actions').hidden = true;
+  $('exam-actions').replaceChildren();
+  $('exam-hotspots').replaceChildren();
+  for (const button of $('exam-zones').children) button.disabled = true;
+  for (const button of examDialog.querySelectorAll('[data-exam-view]')) button.disabled = true;
+  $('exam-patience').textContent = cls === 'out-fixed' ? 'Repair complete' : 'Visitor has left';
+  $('exam-feedback').textContent = cls === 'out-fixed'
+    ? 'Device restored and returned. ' + label + ' — back to reception when you’re ready.'
+    : 'This visitor has left the desk. Return to reception to help the next person.';
+  $('exam-finding-title').textContent = cls === 'out-fixed' ? 'Back in working order.' : 'Examination ended.';
+  $('exam-finding-detail').textContent = cls === 'out-fixed' ? 'All repair stages are complete.' : 'This device is no longer at your workbench.';
+  if (cls === 'out-fixed') {
+    const device = $('exam-device').dataset.device;
+    $('exam-device').innerHTML = inspectionDeviceSVG(device, { screen: 'READY', cue: 'ready' });
+  }
+}
+
+function renderInspection() {
+  if (!examDialog.open || !game) return;
+  $('exam-clock').textContent = clock(game.t);
+  $('exam-inbox').textContent = game.tickets.filter(t => t.kind !== 'repair').length + ' emails waiting';
+  const ticket = examTicket();
+  if (!ticket || exam.finished) return;
+  const model = inspectionFor(ticket);
+  if (!model) { closeInspection(); return; }
+  $('exam-patience').textContent = Math.max(0, Math.ceil((ticket.patience - ticket.age) / 1000)) + 's patience';
+  $('exam-patience').classList.toggle('urgent', ticket.age / ticket.patience > .65);
+  const key = ticket.id + ':' + ticket.stage;
+  if (key === exam.key) return;
+  exam.key = key;
+  exam.zone = null;
+  exam.view = 'front';
+  $('exam-title').textContent = DEVICE_NAMES[ticket.device] + ' examination';
+  $('exam-device').dataset.device = ticket.device;
+  $('exam-from').textContent = ticket.from;
+  $('exam-avatar').innerHTML = avatar(ticket.from, ticket.kind);
+  $('exam-complaint').textContent = '“' + ticket.text + '”';
+  $('exam-step').textContent = 'Stage ' + (ticket.stage + 1) + ' / ' + ticket.stages.length;
+  examDialog.querySelector('.exam-assist').hidden = !activeChallenge.hints;
+  $('exam-hint').textContent = 'Current repair: ' + FIX_LABEL[ticket.fix] + '. Inspect the evidence before choosing.';
+  examDialog.querySelector('.exam-assist').open = false;
+  $('exam-finding-title').textContent = ticket.stage ? 'Something changed. Check again.' : 'Start with what you can see.';
+  $('exam-finding-detail').textContent = activeChallenge.guided
+    ? 'Start with ' + INSPECTION_ZONES.find(z => z.id === model.zone).label.toLowerCase() + '. The outlined component has a clue.'
+    : activeChallenge.raw ? 'Read the component telemetry. Decide which repair addresses the observed state.'
+    : 'Compare the device with the person’s description. Select a component to examine it.';
+  $('exam-finding').classList.remove('has-finding');
+  $('exam-action').hidden = true;
+  $('exam-actions').hidden = true;
+  $('exam-actions').replaceChildren();
+  $('exam-feedback').textContent = '';
+  for (const button of examDialog.querySelectorAll('[data-exam-view]')) button.disabled = false;
+  $('exam-zones').replaceChildren(...model.zones.map((zone, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'exam-zone' + (activeChallenge.guided && zone.finding ? ' guided' : '');
+    button.dataset.zone = zone.id;
+    button.setAttribute('aria-pressed', 'false');
+    button.title = zone.description;
+    button.textContent = (index + 1) + ' · ' + INSPECTION_ZONES[index].label;
+    button.addEventListener('click', () => inspectZone(zone.id));
+    return button;
+  }));
+  renderExamDevice(ticket, model);
+  if (ticket.stage && window.matchMedia('(max-width: 700px)').matches) {
+    $('exam-device').scrollIntoView({ block: 'nearest', behavior: reduceMotion.matches ? 'instant' : 'smooth' });
+  }
+}
+
+$('exam-close').addEventListener('click', closeInspection);
+examDialog.addEventListener('cancel', e => { e.preventDefault(); closeInspection(); });
+$('exam-pause').addEventListener('click', () => { closeInspection(); pause(); });
+$('exam-action').addEventListener('click', () => {
+  const ticket = examTicket();
+  if (!ticket || exam.finished) return;
+  selectedId = ticket.id;
+  useFix($('exam-action').dataset.fix, $('exam-action'));
+});
+for (const button of examDialog.querySelectorAll('[data-exam-view]')) {
+  button.addEventListener('click', () => {
+    const ticket = examTicket();
+    if (!ticket || exam.finished) return;
+    exam.view = button.dataset.examView;
+    renderExamDevice(ticket, inspectionFor(ticket));
+  });
+}
+
 // --- rendering ------------------------------------------------------------------
 
 let roomMinute = -1;
@@ -739,6 +942,7 @@ function createCard(ticket) {
   li.querySelector('.ticket-btn').addEventListener('click', () => {
     selectedId = ticket.id;
     render();
+    if (ticket.kind === 'repair') openInspection(ticket);
   });
   (ticket.kind === 'repair' ? benchEl : queueEl).append(li);
   cards.set(ticket.id, li);
@@ -746,6 +950,7 @@ function createCard(ticket) {
 }
 
 function removeCard(id, cls, label) {
+  finishInspection(id, cls, label);
   const el = cards.get(id);
   if (!el) return;
   cards.delete(id);
@@ -784,20 +989,25 @@ function render() {
       }
     }
     const hint = el.querySelector('.ticket-hint');
-    const showHint = ticket.hint || ticket.id <= 3;
+    const showHint = ticket.kind === 'repair' || ticket.hint || (activeChallenge.hints && ticket.id <= 3);
     // Re-render when visibility flips, or when a boss ticket moves to its next step.
     if (showHint !== !hint.hidden || (showHint && hint.dataset.fix !== ticket.fix)) {
       hint.hidden = !showHint;
       hint.dataset.fix = ticket.fix;
-      hint.innerHTML = `${FIX_ICONS[ticket.fix]}<span>${ticket.hint ? 'Try' : 'Tip'}: ${FIX_LABEL[ticket.fix]}</span>`;
-      hint.className = `ticket-hint hint-${ticket.fix}`;
+      if (ticket.kind === 'repair' && inspectionFor(ticket)) {
+        hint.textContent = 'Examine ' + DEVICE_NAMES[ticket.device].toLowerCase() + ' ↗';
+        hint.className = 'ticket-hint inspect-prompt';
+      } else {
+        hint.innerHTML = `${FIX_ICONS[ticket.fix]}<span>${ticket.hint ? 'Try' : 'Tip'}: ${FIX_LABEL[ticket.fix]}</span>`;
+        hint.className = `ticket-hint hint-${ticket.fix}`;
+      }
     }
   }
 
   // HUD
   $('clock').textContent = clock(game.t);
   renderRoom(game.t);
-  $('clock-sub').textContent = game.t >= SHIFT_MS ? 'Overtime' : 'Shift ends at 5:00 PM';
+  $('clock-sub').textContent = activeChallenge.label + ' · ' + (game.t >= SHIFT_MS ? 'Overtime' : 'Until 5 PM');
   $('score').textContent = game.score.toLocaleString();
   const mult = multiplier(game.streak);
   const multEl = $('mult');
@@ -832,6 +1042,7 @@ function render() {
   $('pips').dataset.level = n >= MAX_QUEUE - 1 ? 'high' : n >= MAX_QUEUE - 3 ? 'mid' : 'low';
   $('queue-count').textContent = `${n} of ${MAX_QUEUE}`;
   floodEl.style.setProperty('--level', (n / MAX_QUEUE).toFixed(3));
+  renderInspection();
 }
 
 // --- toasts and banners ---------------------------------------------------------
@@ -876,6 +1087,18 @@ function frame(now) {
 
 document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (examDialog.open) {
+    if (e.key === 'Escape') { e.preventDefault(); closeInspection(); return; }
+    if (e.key.toLowerCase() === 'p') { e.preventDefault(); closeInspection(); pause(); return; }
+    const fix = FIXES.find(f => f.key === e.key);
+    if (fix && !exam.finished) {
+      e.preventDefault();
+      if (!exam.zone) { $('exam-feedback').textContent = 'Select a component to inspect before choosing a repair.'; return; }
+      selectedId = exam.id;
+      useFix(fix.id);
+    }
+    return; // Native dialog handles Tab; background shortcuts must not change the target.
+  }
   const screen = app.dataset.screen;
   if (screen === 'play') {
     const fix = FIXES.find((f) => f.key === e.key);
@@ -949,6 +1172,18 @@ $('share-btn').addEventListener('click', async () => {
   }
 });
 
+for (const details of document.querySelectorAll('.home-settings')) {
+  details.addEventListener('toggle', () => {
+    if (details.open) for (const other of document.querySelectorAll('.home-settings')) if (other !== details) other.open = false;
+  });
+}
+document.addEventListener('click', event => {
+  if (!event.target.closest('.home-settings')) for (const details of document.querySelectorAll('.home-settings')) details.open = false;
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') for (const details of document.querySelectorAll('.home-settings[open]')) { details.open = false; details.querySelector('summary').focus(); }
+});
+
 renderRoom(0);
 buildFixBar();
 buildPips();
@@ -960,3 +1195,4 @@ renderOnlineToggle();
 updateDailyCard();
 show('start');
 requestAnimationFrame((now) => { last = now; frame(now); });
+
