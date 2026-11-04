@@ -285,6 +285,8 @@ function render() {
     faces.parentElement.setAttribute('aria-label', `Customer happiness: ${game.csat} of ${MAX_CSAT}`);
   }
 
+  $('empty').hidden = game.tickets.length !== 0 || game.phase !== 'playing';
+
   const n = game.tickets.length;
   const pips = $('pips').children;
   for (let i = 0; i < pips.length; i++) pips[i].classList.toggle('on', i < n);

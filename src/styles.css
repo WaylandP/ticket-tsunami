@@ -44,7 +44,8 @@
   --fix-notit: #4a5568;
   --fix-notit-soft: #e7eaef;
 
-  --backdrop: rgba(24, 30, 42, 0.45);
+  --dot: rgba(29, 36, 47, 0.07);
+  --backdrop: rgba(13, 51, 66, 0.42);
   --shadow: 0 10px 30px rgba(20, 25, 35, 0.14);
   --font-body: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Bungee', 'Arial Black', system-ui, sans-serif;
@@ -91,7 +92,8 @@
     --fix-notit: #aab5ca;
     --fix-notit-soft: #262d3c;
 
-    --backdrop: rgba(4, 7, 13, 0.62);
+    --dot: rgba(231, 235, 244, 0.05);
+    --backdrop: rgba(2, 10, 18, 0.66);
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   }
 }
@@ -296,7 +298,34 @@ kbd {
   position: relative;
   overflow: hidden;
   display: grid;
+  /* a faint desk mat, and a little depth toward the water */
+  background-image:
+    linear-gradient(180deg, transparent 40%, var(--water-1)),
+    radial-gradient(var(--dot) 1px, transparent 1.5px);
+  background-size: 100% 100%, 26px 26px;
 }
+
+/* shown while the shift is running and the queue is, briefly, empty */
+.empty {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  text-align: center;
+  pointer-events: none;
+  animation: card-in 0.4s ease-out both;
+}
+
+.empty-big {
+  font-family: var(--font-display);
+  font-size: 26px;
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.empty-sub { color: var(--muted); font-size: 14px; }
 
 /* rising water as the queue fills */
 .flood {
@@ -346,7 +375,12 @@ kbd {
   gap: 10px;
   overflow-y: auto;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
 }
+
+/* tickets pile up from the water line, not from the ceiling */
+.queue li:first-child { margin-top: auto; }
 
 .ticket {
   position: relative;
@@ -363,6 +397,10 @@ kbd {
   border-radius: 14px;
   background: var(--surface);
   box-shadow: 0 1px 3px rgba(15, 20, 30, 0.07);
+}
+
+@media (hover: hover) {
+  .ticket-btn:hover { border-color: var(--accent); }
 }
 
 .ticket.focused .ticket-btn {
@@ -560,11 +598,16 @@ kbd {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 8px;
-  width: min(760px, 100%);
+  width: min(660px, 100%);
   margin: 0 auto;
   padding: 10px 12px;
   padding-bottom: calc(10px + env(safe-area-inset-bottom));
 }
+
+/* the fix bar only works mid-shift; make that visible */
+.app:not([data-screen='play']) .fixes { pointer-events: none; }
+.app:not([data-screen='play']) .fix { opacity: 0.45; }
+.fix { transition: opacity 0.25s ease; }
 
 .fix {
   display: flex;
@@ -712,9 +755,12 @@ kbd {
 .btn-primary {
   background: var(--accent);
   color: var(--accent-ink);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+  transition: transform 0.12s ease, filter 0.12s ease;
 }
 
-.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
 
 .btn-ghost {
   background: transparent;
