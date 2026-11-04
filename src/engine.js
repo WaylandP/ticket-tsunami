@@ -59,7 +59,7 @@ export const DIFFICULTIES = [
     vipChance: 0.05,
     spawn: { start: 4500, end: 2200, min: 900, overtime: 0.45 },
     patience: { start: 22_000, end: 15_000, min: 6000, overtime: 0.25 },
-    outage: { first: 70_000, gapMin: 60_000, gapMax: 90_000, size: 2 },
+    outage: { first: 50_000, gapMin: 60_000, gapMax: 90_000, size: 2 },
   },
   {
     id: 'nineToFive',
@@ -69,7 +69,7 @@ export const DIFFICULTIES = [
     vipChance: 0.08,
     spawn: { start: 3800, end: 1600, min: 700, overtime: 0.5 },
     patience: { start: 18_000, end: 11_000, min: 5000, overtime: 0.3 },
-    outage: { first: 55_000, gapMin: 45_000, gapMax: 70_000, size: 3 },
+    outage: { first: 35_000, gapMin: 45_000, gapMax: 70_000, size: 3 },
   },
   {
     id: 'monday',
@@ -79,7 +79,7 @@ export const DIFFICULTIES = [
     vipChance: 0.1,
     spawn: { start: 3000, end: 1000, min: 380, overtime: 0.6 },
     patience: { start: 14_000, end: 8000, min: 3800, overtime: 0.35 },
-    outage: { first: 45_000, gapMin: 35_000, gapMax: 55_000, size: 3 },
+    outage: { first: 28_000, gapMin: 35_000, gapMax: 55_000, size: 3 },
     boss: true, // Mondays get the three-step projector ticket
   },
 ];
@@ -174,8 +174,8 @@ export function createGame(seed = 1, difficulty = DEFAULT_DIFFICULTY, mode = 'sh
     charges: Math.min(3, perks.startCharges || 0), // earned every 10-ticket streak
     slowUntil: 0, // coffee break: the world slows until then
     frenzyUntil: 0, // printer fire: double points until then
-    nextFrenzy: start + (mode === 'endless' ? 45_000 : 60_000),
-    nextWalkIn: start + (mode === 'endless' ? 22_000 : 32_000),
+    nextFrenzy: start + (mode === 'endless' ? 30_000 : 45_000),
+    nextWalkIn: start + (mode === 'endless' ? 8_000 : 12_000),
     tutorialStep: 0,
     tickets: [],
     nextId: 1,
@@ -227,9 +227,9 @@ function spawnReopen(game, events, r) {
 
 function makeTicket(game, fix) {
   const diff = difficultyFor(game.difficulty);
-  const vip = game.t > 30_000 && !fix && rand(game) < diff.vipChance;
+  const vip = game.t > 20_000 && !fix && rand(game) < diff.vipChance;
   // A regular with a signature problem? Learn their habits.
-  const regular = !vip && !fix && game.t > 15_000 && rand(game) < 0.18 ? pick(game, REGULARS) : null;
+  const regular = !vip && !fix && game.t > 8_000 && rand(game) < 0.18 ? pick(game, REGULARS) : null;
   const wantFix = fix || (regular && regular.fix) || null;
 
   const pool = wantFix ? TICKETS.map((x, i) => [x, i]).filter(([x]) => x.fix === wantFix) : TICKETS.map((x, i) => [x, i]);
@@ -268,7 +268,7 @@ function addTicket(game, events, fix) {
     loseCsat(game, events, 'overflow');
     return;
   }
-  const spam = !fix && game.t > 25_000 && rand(game) < 0.07;
+  const spam = !fix && game.t > 15_000 && rand(game) < 0.07;
   const ticket = spam ? makeSpam(game) : makeTicket(game, fix);
   game.tickets.push(ticket);
   events.push({ type: 'spawn', ticket });
@@ -377,13 +377,13 @@ export function tick(game, dt) {
       game.tickets.push(ticket);
       events.push({ type: 'spawn', ticket });
       game.nextWalkIn = game.t + (game.online
-        ? lerp(40_000, 70_000, rand(game))
+        ? lerp(26_000, 45_000, rand(game))
         : Math.max(4500, spawnInterval(game.t, diff) * 3.2 * lerp(0.8, 1.2, rand(game))));
     }
   }
 
   // The Monday boss ticket: three fixes, in order, before the all-hands.
-  if (diff.boss && game.mode === 'shift' && !game.bossSpawned && game.t >= 70_000 && game.tickets.length < MAX_QUEUE) {
+  if (diff.boss && game.mode === 'shift' && !game.bossSpawned && game.t >= 50_000 && game.tickets.length < MAX_QUEUE) {
     game.bossSpawned = true;
     const stages = ['connect', 'restart', 'update'];
     const ticket = {
@@ -472,7 +472,7 @@ export function applyFix(game, ticketId, fixId) {
       charge = true;
     }
     // Some users write back: "it's doing it again."
-    if (ticket.kind === 'normal' && !ticket.vip && game.t > 40_000 && rand(game) < 0.1) {
+    if (ticket.kind === 'normal' && !ticket.vip && game.t > 30_000 && rand(game) < 0.1) {
       game.pending.push({
         at: game.t + lerp(6000, 10_000, rand(game)),
         reopen: { template: ticket.template, fix: fixId, text: `RE: ${ticket.text}`, from: ticket.from },
