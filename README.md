@@ -33,8 +33,16 @@ swinging in overtime.
   (**Q**, slows everything for 5s), 📖 Wiki (**W**, reveals every fix) or
   🤖 Auto-reply (**E**, closes the most urgent ticket).
 - The **Daily Shift** is the same seeded storm for everyone, once a day, one
-  try — copy your result and compare.
-- Ten **achievements** to unlock, shown on the shift report.
+  try — copy your result and compare. The **Night Shift** starts at 5 PM at
+  full heat: survive as long as you can.
+- Learn the **regulars**: Gary is always locked out, Frank's connection is
+  always down, and Jules the intern usually figures it out alone. On Mondays,
+  the projector dies before the all-hands — a **three-step boss ticket**.
+- Eleven **achievements** to unlock, "notes from your manager" after every
+  shift, and an **employee file** tracking your whole career.
+- First day? There's a 90-second **training** on the start screen.
+- The **lofi radio** is synthesized live, no audio files: Off, Auto, Slow,
+  Medium or Fast. Auto matches the day — Mondays get fast music.
 - **↑/↓** change which ticket you're working, **P** or **Esc** pauses, and the
   speaker button mutes the (synthesized, dependency-free) sound.
 
