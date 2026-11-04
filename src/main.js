@@ -201,6 +201,31 @@ function startShift(newMode = 'free') {
   render();
 }
 
+/** Back to the start screen: clean floor, fresh HUD, no game. */
+function goHome() {
+  running = false;
+  game = null;
+  selectedId = null;
+  for (const el of cards.values()) el.remove();
+  cards.clear();
+  queueEl.replaceChildren();
+  $('empty').hidden = true;
+  app.classList.remove('overtime', 'frenzy');
+  $('clock').textContent = '9:00 AM';
+  $('clock-sub').textContent = 'Shift ends at 5:00 PM';
+  $('score').textContent = '0';
+  $('mult').hidden = true;
+  $('charge-chip').textContent = '⚡ 0';
+  $('charge-chip').classList.remove('has-charge');
+  buildFaces();
+  for (const pip of $('pips').children) pip.classList.remove('on');
+  $('queue-count').textContent = `0 of ${MAX_QUEUE}`;
+  floodEl.style.setProperty('--level', '0');
+  updateDailyCard();
+  renderBest();
+  show('start');
+}
+
 function pause() {
   if (!running) return;
   running = false;
@@ -533,6 +558,9 @@ document.addEventListener('keydown', (e) => {
   } else if (screen === 'pause' && (e.key === 'Escape' || e.key === 'p' || e.key === 'P')) {
     e.preventDefault();
     resume();
+  } else if (screen === 'over' && e.key === 'Escape') {
+    e.preventDefault();
+    goHome();
   }
 });
 
@@ -543,6 +571,7 @@ document.addEventListener('visibilitychange', () => {
 $('start-btn').addEventListener('click', () => startShift('free'));
 $('daily-btn').addEventListener('click', () => startShift('daily'));
 $('again-btn').addEventListener('click', () => startShift('free'));
+$('menu-btn').addEventListener('click', goHome);
 $('pause-btn').addEventListener('click', pause);
 
 // Sound on/off, remembered per browser.
