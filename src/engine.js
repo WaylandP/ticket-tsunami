@@ -15,7 +15,8 @@ export const FIX_IDS = FIXES.map((f) => f.id);
 
 export const HOUR_MS = 20_000; // one in-game hour of the 9-to-5 shift
 export const SHIFT_MS = 8 * HOUR_MS; // 9:00 AM to 5:00 PM
-export const MAX_QUEUE = 8;
+export const MAX_QUEUE = 8; // email tickets; walk-ins have their own bench
+export const BENCH_MAX = 2;
 export const MAX_CSAT = 5;
 
 const OUTAGES = [
@@ -132,13 +133,20 @@ const firstTicketOf = (fix) => TICKETS.findIndex((t) => t.fix === fix);
  * @param mode 'shift' (a normal 9-to-5), 'tutorial' (five guided tickets,
  *   nothing else happens), or 'endless' (the Night Shift: start at 5 PM at
  *   full heat and survive as long as you can).
+ * @param opts.online false turns the email queue off: no regular tickets,
+ *   outages, spam or fire drills — only walk-ins, arriving much faster.
+ * @param opts.perks shop upgrades: { coffeeMs, autoHint, startCharges, armor }.
  */
-export function createGame(seed = 1, difficulty = DEFAULT_DIFFICULTY, mode = 'shift') {
+export function createGame(seed = 1, difficulty = DEFAULT_DIFFICULTY, mode = 'shift', opts = {}) {
   const diff = difficultyFor(difficulty);
   const start = mode === 'endless' ? SHIFT_MS : 0;
+  const perks = { ...opts.perks };
   return {
     seed,
     mode,
+    online: opts.online !== false,
+    perks,
+    armor: perks.armor || 0,
     difficulty: diff.id,
     rng: seed | 0,
     phase: 'playing', // 'playing' | 'over'
@@ -163,7 +171,7 @@ export function createGame(seed = 1, difficulty = DEFAULT_DIFFICULTY, mode = 'sh
     totalCloseMs: 0,
     confusions: {}, // "tried>needed" -> count, for the shift insights
     inboxZeroNoon: false,
-    charges: 0, // power-up charges, earned every 10-ticket streak
+    charges: Math.min(3, perks.startCharges || 0), // earned every 10-ticket streak
     slowUntil: 0, // coffee break: the world slows until then
     frenzyUntil: 0, // printer fire: double points until then
     nextFrenzy: start + (mode === 'endless' ? 45_000 : 60_000),
@@ -255,7 +263,7 @@ function makeTicket(game, fix) {
 }
 
 function addTicket(game, events, fix) {
-  if (game.tickets.length >= MAX_QUEUE) {
+  if (game.tickets.filter((t) => t.kind !== 'repair').length >= MAX_QUEUE) {
     game.overflowed++;
     loseCsat(game, events, 'overflow');
     return;
@@ -267,8 +275,13 @@ function addTicket(game, events, fix) {
 }
 
 function loseCsat(game, events, reason) {
-  game.csat = Math.max(0, game.csat - 1);
   game.streak = 0;
+  if (game.armor > 0) {
+    game.armor--;
+    events.push({ type: 'armor', reason });
+    return;
+  }
+  game.csat = Math.max(0, game.csat - 1);
   events.push({ type: 'csat', reason, csat: game.csat });
   if (game.csat === 0 && game.phase === 'playing') {
     game.phase = 'over';
@@ -300,6 +313,7 @@ export function tick(game, dt) {
   // Age tickets; expire, self-fix, or quietly bin the junk.
   for (const ticket of [...game.tickets]) {
     ticket.age += ageDt;
+    if (game.perks.autoHint && !ticket.hint && ticket.age > ticket.patience * 0.5) ticket.hint = true;
     if (ticket.selfFixAt !== null && ticket.age >= ticket.selfFixAt) {
       game.tickets.splice(game.tickets.indexOf(ticket), 1);
       game.selfFixed++;
@@ -340,25 +354,32 @@ export function tick(game, dt) {
 
   // Outages: a burst of the same kind of ticket.
   const diff = difficultyFor(game.difficulty);
-  if (game.t >= game.nextOutage) {
+  if (game.online && game.t >= game.nextOutage) {
     const outage = pick(game, OUTAGES);
     events.push({ type: 'outage', ...outage });
     for (let i = 0; i < diff.outage.size; i++) game.pending.push({ at: game.t + 400 + i * 700, fix: outage.fix });
     game.nextOutage = game.t + lerp(diff.outage.gapMin, diff.outage.gapMax, rand(game));
   }
 
-  // Walk-ins: someone carries the machine to your desk. Two fixes, in order.
-  if (game.mode !== 'tutorial' && game.t >= game.nextWalkIn && game.tickets.length < MAX_QUEUE) {
-    const r = pick(game, REPAIRS);
-    const ticket = {
-      id: game.nextId++, template: -3, kind: 'repair', device: r.device,
-      stages: [...r.stages], stage: 0, fix: r.stages[0],
-      text: r.text, from: pick(game, NAMES), vip: false, age: 0,
-      patience: patienceFor(game.t, diff) * 1.8, selfFixAt: null, hint: true,
-    };
-    game.tickets.push(ticket);
-    events.push({ type: 'spawn', ticket });
-    game.nextWalkIn = game.t + lerp(40_000, 70_000, rand(game));
+  // Walk-ins: someone carries the machine to your desk, bench space allowing.
+  // With the email queue switched off, the bench IS the job: they come fast.
+  if (game.mode !== 'tutorial' && game.t >= game.nextWalkIn) {
+    if (game.tickets.filter((t) => t.kind === 'repair').length >= BENCH_MAX) {
+      game.nextWalkIn = game.t + 1500; // they wait in the hall
+    } else {
+      const r = pick(game, REPAIRS);
+      const ticket = {
+        id: game.nextId++, template: -3, kind: 'repair', device: r.device,
+        stages: [...r.stages], stage: 0, fix: r.stages[0],
+        text: r.text, from: pick(game, NAMES), vip: false, age: 0,
+        patience: patienceFor(game.t, diff) * (1.2 + 0.3 * r.stages.length), selfFixAt: null, hint: true,
+      };
+      game.tickets.push(ticket);
+      events.push({ type: 'spawn', ticket });
+      game.nextWalkIn = game.t + (game.online
+        ? lerp(40_000, 70_000, rand(game))
+        : Math.max(4500, spawnInterval(game.t, diff) * 3.2 * lerp(0.8, 1.2, rand(game))));
+    }
   }
 
   // The Monday boss ticket: three fixes, in order, before the all-hands.
@@ -376,7 +397,7 @@ export function tick(game, dt) {
   }
 
   // Fire drill: something is literally on fire. Double points while it burns.
-  if (game.t >= game.nextFrenzy) {
+  if (game.online && game.t >= game.nextFrenzy) {
     game.frenzyUntil = game.t + 8000;
     events.push({ type: 'frenzy', until: game.frenzyUntil });
     game.pending.push({ at: game.t + 300, fix: null }, { at: game.t + 900, fix: null });
@@ -392,8 +413,8 @@ export function tick(game, dt) {
     return false;
   });
 
-  // Regular arrivals.
-  while (game.phase === 'playing' && game.t >= game.nextSpawn) {
+  // Regular arrivals (email tickets).
+  while (game.online && game.phase === 'playing' && game.t >= game.nextSpawn) {
     addTicket(game, events, null);
     game.nextSpawn += spawnInterval(game.t, diff) * lerp(0.75, 1.25, rand(game));
   }
@@ -474,6 +495,7 @@ export function summary(game) {
   return {
     score: game.score,
     mode: game.mode,
+    online: game.online,
     difficulty: game.difficulty,
     difficultyLabel: difficultyFor(game.difficulty).label,
     clock: clock(game.t),
@@ -537,7 +559,7 @@ export function usePower(game, powerId) {
   if (powerId === 'bot' && !game.tickets.length) return { type: 'none' }; // nothing to close, keep the charge
   game.charges--;
   if (powerId === 'coffee') {
-    game.slowUntil = game.t + 5000;
+    game.slowUntil = game.t + (game.perks.coffeeMs || 5000);
     return { type: 'power', power: 'coffee' };
   }
   if (powerId === 'kb') {

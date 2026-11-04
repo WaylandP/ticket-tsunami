@@ -551,6 +551,89 @@ test('machines walk in, take two fixes in order, and walk out', () => {
   assert.equal(g.repairsClosed, 1);
 });
 
+test('online off: no emails, no outages — only walk-ins, and they hurry', () => {
+  const g = createGame(7, DEFAULT_DIFFICULTY, 'shift', { online: false });
+  const events = [];
+  let maxBench = 0;
+  for (let ms = 0; ms < 90_000 && g.phase === 'playing'; ms += 50) {
+    events.push(...tick(g, 50));
+    maxBench = Math.max(maxBench, g.tickets.filter((t) => t.kind === 'repair').length);
+    const m = mostUrgent(g);
+    if (m) applyFix(g, m.id, m.fix);
+  }
+  const spawns = events.filter((e) => e.type === 'spawn');
+  assert.ok(spawns.length >= 5, `walk-ins should come steadily offline (got ${spawns.length})`);
+  assert.ok(spawns.every((e) => e.ticket.kind === 'repair'), 'nothing but walk-ins arrives');
+  assert.ok(!events.some((e) => ['outage', 'frenzy'].includes(e.type)), 'the email world stays quiet');
+  assert.ok(maxBench <= 2, 'the bench holds two machines at most');
+  assert.equal(summary(g).online, false);
+});
+
+test('the bench never exceeds two machines, even online', () => {
+  let maxBench = 0;
+  const g = createGame(11);
+  for (let ms = 0; ms < 120_000 && g.phase === 'playing'; ms += 50) {
+    tick(g, 50);
+    maxBench = Math.max(maxBench, g.tickets.filter((t) => t.kind === 'repair').length);
+    const m = mostUrgent(g);
+    if (m) applyFix(g, m.id, m.fix);
+  }
+  assert.ok(maxBench >= 1 && maxBench <= 2, `bench stayed within limits (saw ${maxBench})`);
+});
+
+test('walk-ins never overflow the email queue', () => {
+  const g = createGame(3);
+  for (let i = 0; i < MAX_QUEUE; i++) plant(g); // inbox full
+  plant(g, { kind: 'repair', device: 'laptop', stages: ['connect', 'restart'], stage: 0, fix: 'connect' });
+  g.nextSpawn = 0;
+  const events = tick(g, 50);
+  assert.ok(events.some((e) => e.type === 'csat' && e.reason === 'overflow'), 'a ninth email still overflows');
+  assert.equal(g.tickets.filter((t) => t.kind === 'repair').length, 1, 'the bench machine is untouched');
+});
+
+test('shop perks: longer coffee, auto-hints, a head start, a forgiving chair', () => {
+  const perks = { coffeeMs: 8000, autoHint: true, startCharges: 1, armor: 1 };
+  const g = createGame(1, DEFAULT_DIFFICULTY, 'shift', { perks });
+  assert.equal(g.charges, 1, 'Jules preloads a charge');
+
+  usePower(g, 'coffee');
+  assert.equal(g.slowUntil, g.t + 8000, 'the second pot brews longer');
+  g.slowUntil = 0; // drink up; the next assertions want real time
+
+  const t = plant(g, { patience: 1000 });
+  tick(g, 600); // past half patience
+  assert.equal(t.hint, true, 'the indexed wiki pings on its own');
+
+  // The chair absorbs exactly one unhappy user.
+  const before = g.csat;
+  g.tickets.length = 0;
+  plant(g, { patience: 50 });
+  const ev1 = tick(g, 100);
+  assert.ok(ev1.some((e) => e.type === 'armor'), 'the chair takes the first hit');
+  assert.equal(g.csat, before);
+  plant(g, { patience: 50 });
+  tick(g, 100);
+  assert.equal(g.csat, before - 1, 'the second hit lands');
+});
+
+test('the big three-step machines exist and get extra patience', () => {
+  const g = createGame(1);
+  const diff = difficultyFor(g.difficulty);
+  let three = null;
+  for (let seed = 1; seed < 40 && !three; seed++) {
+    const game = createGame(seed);
+    game.nextWalkIn = 0;
+    game.nextSpawn = game.nextOutage = game.nextFrenzy = 1e12;
+    three = tick(game, 50).find((e) => e.type === 'spawn' && e.ticket.stages?.length === 3)?.ticket;
+    if (three) {
+      assert.ok(['server', 'tv'].includes(three.device), 'three-steppers are the big machines');
+      assert.ok(three.patience > patienceFor(game.t, diff) * 2, 'big jobs get extra patience');
+    }
+  }
+  assert.ok(three, 'a three-step walk-in should appear across 40 seeds');
+  assert.ok(g.online, 'sanity: online defaults to true');
+});
+
 test('the five fixes are distinct and mapped to keys 1-5', () => {
   assert.equal(FIXES.length, 5);
   assert.equal(new Set(FIX_IDS).size, 5);

@@ -112,4 +112,10 @@ export const REPAIRS = [
   { device: 'phone', text: 'Phone insists it’s in airplane mode. It is not on an airplane.', stages: ['connect', 'restart'] },
   { device: 'monitor', text: 'Monitor shows everything upside down. The user has adapted. Fix it anyway.', stages: ['connect', 'restart'] },
   { device: 'monitor', text: 'Second monitor only works while someone holds the cable. His name is Greg.', stages: ['connect', 'update'] },
+  // The big jobs: three steps, big pay.
+  { device: 'server', text: 'The server room is beeping in a new, more urgent key.', stages: ['connect', 'restart', 'update'] },
+  { device: 'server', text: 'Someone unplugged the rack to charge a scooter.', stages: ['connect', 'restart', 'update'] },
+  { device: 'server', text: 'Rack is up, but the admin password expired mid-backup.', stages: ['password', 'restart', 'update'] },
+  { device: 'tv', text: 'The conference room TV shows static and, occasionally, a face.', stages: ['connect', 'restart', 'update'] },
+  { device: 'tv', text: 'The big-room TV only mirrors Dave\u2019s laptop. Dave left in March.', stages: ['connect', 'update', 'restart'] },
 ];
