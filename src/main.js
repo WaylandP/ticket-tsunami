@@ -1,6 +1,6 @@
 import {
-  FIXES, MAX_QUEUE, MAX_CSAT, SHIFT_MS,
-  createGame, tick, applyFix, mostUrgent, multiplier, clock, summary,
+  FIXES, MAX_QUEUE, MAX_CSAT, SHIFT_MS, DIFFICULTIES, DEFAULT_DIFFICULTY,
+  createGame, tick, applyFix, mostUrgent, multiplier, clock, summary, difficultyFor,
 } from './engine.js';
 import { FIX_ICONS, face } from './icons.js';
 
@@ -22,12 +22,23 @@ const cards = new Map(); // ticket id -> <li>
 
 // --- storage (per-browser convenience only) ----------------------------------
 
-function loadBest() {
-  try { return JSON.parse(localStorage.getItem('ticket-tsunami:best')) || null; } catch { return null; }
+function loadBest(diffId) {
+  try { return JSON.parse(localStorage.getItem(`ticket-tsunami:best:${diffId}`)) || null; } catch { return null; }
 }
-function saveBest(best) {
-  try { localStorage.setItem('ticket-tsunami:best', JSON.stringify(best)); } catch { /* private mode etc. */ }
+function saveBest(diffId, best) {
+  try { localStorage.setItem(`ticket-tsunami:best:${diffId}`, JSON.stringify(best)); } catch { /* private mode etc. */ }
 }
+function loadDifficulty() {
+  try {
+    const id = localStorage.getItem('ticket-tsunami:difficulty');
+    return DIFFICULTIES.some((d) => d.id === id) ? id : DEFAULT_DIFFICULTY;
+  } catch { return DEFAULT_DIFFICULTY; }
+}
+function saveDifficulty(id) {
+  try { localStorage.setItem('ticket-tsunami:difficulty', id); } catch { /* private mode etc. */ }
+}
+
+let difficulty = loadDifficulty();
 
 // --- static UI ------------------------------------------------------------------
 
@@ -52,6 +63,31 @@ function buildPips() {
   $('pips').innerHTML = Array.from({ length: MAX_QUEUE }, () => '<span class="pip"></span>').join('');
 }
 
+function buildDiffPicker() {
+  const row = $('diff');
+  for (const d of DIFFICULTIES) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'diff-btn';
+    btn.dataset.diff = d.id;
+    btn.textContent = d.label;
+    btn.setAttribute('aria-pressed', 'false');
+    btn.addEventListener('click', () => setDifficulty(d.id));
+    row.append(btn);
+  }
+  setDifficulty(difficulty);
+}
+
+function setDifficulty(id) {
+  difficulty = id;
+  saveDifficulty(id);
+  for (const btn of document.querySelectorAll('.diff-btn')) {
+    btn.setAttribute('aria-pressed', String(btn.dataset.diff === id));
+  }
+  $('diff-blurb').textContent = difficultyFor(id).blurb;
+  renderBest();
+}
+
 /** Fill the HUD with five happy faces before the first shift starts. */
 function buildFaces() {
   const faces = $('faces');
@@ -74,7 +110,7 @@ function startShift() {
   cards.clear();
   queueEl.replaceChildren();
   selectedId = null;
-  game = createGame((Date.now() ^ (Math.random() * 1e9)) | 0);
+  game = createGame((Date.now() ^ (Math.random() * 1e9)) | 0, difficulty);
   show('play');
   running = true;
   last = performance.now();
@@ -97,11 +133,11 @@ function resume() {
 function endShift() {
   running = false;
   const s = summary(game);
-  const best = loadBest();
+  const best = loadBest(s.difficulty);
   const isBest = !best || s.score > best.score;
-  if (isBest && s.score > 0) saveBest({ score: s.score, clock: s.clock, rank: s.rank });
+  if (isBest && s.score > 0) saveBest(s.difficulty, { score: s.score, clock: s.clock, rank: s.rank });
 
-  $('over-eyebrow').textContent = s.madeItToFive ? 'Shift report · Overtime survivor' : 'Shift report';
+  $('over-eyebrow').textContent = `Shift report · ${s.difficultyLabel}${s.madeItToFive ? ' · Overtime survivor' : ''}`;
   $('r-clock').textContent = s.clock;
   $('r-rank').textContent = s.rank;
   $('r-score').textContent = s.score.toLocaleString();
@@ -117,14 +153,14 @@ function endShift() {
 }
 
 function shareText(s) {
-  return `Ticket Tsunami: lasted until ${s.clock}, closed ${s.closed} tickets, ${s.score.toLocaleString()} points, best streak ${s.bestStreak}. Rank: ${s.rank}.`;
+  return `Ticket Tsunami (${s.difficultyLabel}): lasted until ${s.clock}, closed ${s.closed} tickets, ${s.score.toLocaleString()} points, best streak ${s.bestStreak}. Rank: ${s.rank}.`;
 }
 
 function renderBest() {
-  const best = loadBest();
+  const best = loadBest(difficulty);
   const line = $('best-line');
   line.hidden = !best;
-  if (best) line.textContent = `Your best: ${best.score.toLocaleString()} points, lasted until ${best.clock}.`;
+  if (best) line.textContent = `Your best ${difficultyFor(difficulty).label}: ${best.score.toLocaleString()} points, lasted until ${best.clock}.`;
 }
 
 // --- gameplay -------------------------------------------------------------------
@@ -380,6 +416,6 @@ $('share-btn').addEventListener('click', async () => {
 buildFixBar();
 buildPips();
 buildFaces();
-renderBest();
+buildDiffPicker();
 show('start');
 requestAnimationFrame((now) => { last = now; frame(now); });

@@ -743,6 +743,40 @@ kbd {
   color: var(--muted);
 }
 
+.diff-wrap { display: grid; gap: 7px; }
+
+.diff {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.diff-btn {
+  min-height: 44px;
+  padding: 8px 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.diff-btn:hover { border-color: var(--accent); }
+
+.diff-btn[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.diff-blurb {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 1.4em;
+}
+
 .btn {
   min-height: 48px;
   padding: 11px 22px;
