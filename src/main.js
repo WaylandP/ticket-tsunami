@@ -4,7 +4,7 @@ import {
   createGame, tick, applyFix, usePower, mostUrgent, multiplier, clock, summary,
   difficultyFor, evaluateAchievements, shiftInsights,
 } from './engine.js';
-import { FIX_ICONS, face } from './icons.js';
+import { FIX_ICONS, face, avatar, DEVICE_ART } from './icons.js';
 import { play, setMuted, isMuted, music } from './sound.js';
 
 const $ = (id) => document.getElementById(id);
@@ -540,7 +540,7 @@ function handleEvents(events) {
   for (const ev of events) {
     switch (ev.type) {
       case 'spawn':
-        play('spawn');
+        play(ev.ticket.kind === 'repair' ? 'knock' : 'spawn');
         if (game && game.mode === 'tutorial') coach(ev.ticket.fix);
         break;
       case 'tutorialDone':
@@ -593,17 +593,21 @@ function handleEvents(events) {
 
 function createCard(ticket) {
   const li = document.createElement('li');
-  li.className = 'ticket' + (ticket.vip ? ' vip' : '') + (ticket.kind === 'spam' ? ' spam' : '');
+  li.className = 'ticket' + (ticket.vip ? ' vip' : '') + (ticket.kind === 'spam' ? ' spam' : '') + (ticket.kind === 'repair' ? ' repair' : '');
   li.dataset.id = ticket.id;
   const chip = ticket.vip ? '<span class="chip chip-vip">VIP · 2x</span>'
-    : ticket.kind === 'boss' ? '<span class="chip chip-boss">Step 1 of 3</span>'
+    : ticket.kind === 'boss' ? '<span class="chip chip-step chip-boss">Step 1 of 3</span>'
+    : ticket.kind === 'repair' ? `<span class="chip chip-step chip-repair">Walk-in · 1 of ${ticket.stages.length}</span>`
     : ticket.kind === 'spam' ? '<span class="chip chip-spam">Sus · 1.5x</span>'
     : ticket.kind === 'reopen' ? '<span class="chip chip-re">Reopened</span>' : '';
+  const art = ticket.kind === 'repair' ? `<span class="device-art" aria-hidden="true">${DEVICE_ART[ticket.device]}</span>` : '';
   li.innerHTML = `<button type="button" class="ticket-btn">
-  <span class="ticket-meta"><span class="ticket-id">INC-${String(ticket.id).padStart(4, '0')}</span><span class="ticket-from"></span>${chip}</span>
-  <span class="ticket-text"></span>
-  <span class="ticket-hint" hidden></span>
-  <span class="patience" aria-hidden="true"><span class="patience-fill"></span></span>
+  ${art}<span class="ticket-body">
+    <span class="ticket-meta"><span class="avatar" aria-hidden="true">${avatar(ticket.from, ticket.kind)}</span><span class="ticket-id">INC-${String(ticket.id).padStart(4, '0')}</span><span class="ticket-from"></span>${chip}</span>
+    <span class="ticket-text"></span>
+    <span class="ticket-hint" hidden></span>
+    <span class="patience" aria-hidden="true"><span class="patience-fill"></span></span>
+  </span>
 </button>`;
   li.querySelector('.ticket-from').textContent = ticket.from;
   li.querySelector('.ticket-text').textContent = ticket.text;
@@ -645,8 +649,12 @@ function render() {
     el.classList.toggle('focused', ticket === focus);
     el.querySelector('.ticket-btn').setAttribute('aria-current', ticket === focus ? 'true' : 'false');
     if (ticket.stages) {
-      const bossChip = el.querySelector('.chip-boss');
-      if (bossChip) bossChip.textContent = `Step ${ticket.stage + 1} of ${ticket.stages.length}`;
+      const stepChip = el.querySelector('.chip-step');
+      if (stepChip) {
+        stepChip.textContent = ticket.kind === 'repair'
+          ? `Walk-in · ${ticket.stage + 1} of ${ticket.stages.length}`
+          : `Step ${ticket.stage + 1} of ${ticket.stages.length}`;
+      }
     }
     const hint = el.querySelector('.ticket-hint');
     const showHint = ticket.hint || ticket.id <= 3;
