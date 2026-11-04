@@ -4,10 +4,11 @@ import {
   createGame, tick, applyFix, usePower, mostUrgent, multiplier, clock, summary,
   evaluateAchievements, shiftInsights,
 } from './engine.js';
-import { FIX_ICONS, POWER_ICONS, face, avatar, personSVG, roomSVG, deskSVG, repairBenchSVG, homeHeroSVG, inspectionDeviceSVG, DEVICE_NAMES, DEVICE_HOTSPOTS } from './icons.js';
+import { FIX_ICONS, POWER_ICONS, face, avatar, personSVG, roomSVG, deskSVG, repairBenchSVG, homeHeroSVG, inspectionDeviceSVG, DEVICE_NAMES, DEVICE_HOTSPOTS, DEVICE_CONNECTION_VIEWS } from './icons.js';
 import { inspectionFor, INSPECTION_ZONES } from './inspection.js';
 import { CHALLENGES, challengeFor, challengeBestKey, evidenceFor } from './challenges.js';
 import { createPractice, applyPracticeFix, nextPracticeCase } from './practice.js';
+import { initSecurityLab } from './security-ui.js';
 import { play, setMuted, isMuted, music } from './sound.js';
 
 const $ = (id) => document.getElementById(id);
@@ -21,6 +22,7 @@ $('repair-bench-art').innerHTML = repairBenchSVG();
 $('home-art').innerHTML = homeHeroSVG();
 const screens = { start: $('start-screen'), pause: $('pause-screen'), over: $('over-screen'), stats: $('stats-screen'), shop: $('shop-screen') };
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const securityLab = initSecurityLab();
 
 const FIXES = ENGINE_FIXES.map(f => ({ ...f, label: ({ restart: 'Restart safely', password: 'Recover access', connect: 'Check connection', update: 'Verified update', notit: 'Route / report' })[f.id] }));
 const SHORT = { restart: 'Restart', password: 'Access', connect: 'Connection', update: 'Update', notit: 'Route / report' };
@@ -776,12 +778,16 @@ function examTicket() {
 function renderExamDevice(ticket, model) {
   $('exam-device').innerHTML = inspectionDeviceSVG(ticket.device, model, exam.view);
   const positions = DEVICE_HOTSPOTS[ticket.device];
+  const connectionView = DEVICE_CONNECTION_VIEWS[ticket.device];
+  examDialog.querySelector('[data-exam-view="rear"]').textContent = connectionView.label;
+  $('exam-view-label').textContent = exam.view === 'rear' ? connectionView.caption : 'Front view · screen and controls';
+  $('exam-physical-state').textContent = model.physical.description;
   const visible = exam.view === 'rear' ? ['ports'] : (ticket.device === 'phone' ? ['screen', 'power', 'security', 'ports'] : ['screen', 'power', 'security']);
   $('exam-hotspots').replaceChildren(...visible.map(zone => {
     const button = document.createElement('button');
     const index = INSPECTION_ZONES.findIndex(z => z.id === zone);
     // Keep 44px controls beside the evidence: never cover a status label or loose plug.
-    const [x, y] = exam.view === 'rear' ? (ticket.device === 'phone' ? [445, 320] : [520, 210]) : positions[zone];
+    const [x, y] = exam.view === 'rear' ? DEVICE_CONNECTION_VIEWS[ticket.device].hotspot : positions[zone];
     button.type = 'button';
     button.className = 'exam-hotspot' + (activeChallenge.guided && zone === model.zone ? ' guided' : '');
     button.textContent = String(index + 1);
@@ -855,13 +861,17 @@ function finishInspection(id, cls, label) {
   if (cls === 'out-fixed') {
     const device = $('exam-device').dataset.device;
     $('exam-device').innerHTML = inspectionDeviceSVG(device, { screen: 'READY', cue: 'ready' });
+    $('exam-view-label').textContent = 'Front view · repair complete';
+    $('exam-physical-state').textContent = 'Power on · ready to return';
+    for (const button of examDialog.querySelectorAll('[data-exam-view]')) button.setAttribute('aria-pressed', String(button.dataset.examView === 'front'));
   }
 }
 
 function renderInspection() {
   if (!examDialog.open || !game) return;
   $('exam-clock').textContent = game.mode === 'practice' ? 'Untimed' : clock(game.t);
-  $('exam-inbox').textContent = game.tickets.filter(t => t.kind !== 'repair').length + ' emails waiting';
+  const waiting = game.tickets.filter(t => t.kind !== 'repair').length;
+  $('exam-inbox').textContent = waiting + (waiting === 1 ? ' email waiting' : ' emails waiting');
   const ticket = examTicket();
   if (!ticket || exam.finished) return;
   const model = inspectionFor(ticket);
@@ -968,7 +978,7 @@ function createCard(ticket) {
     <span class="ticket-hint" hidden></span>
     <span class="patience" aria-hidden="true"><span class="patience-fill"></span></span>
   </span>
-  <span class="figure" aria-hidden="true">${personSVG(ticket.from, ticket.device)}</span>
+  <span class="figure" aria-hidden="true">${personSVG(ticket.from, ticket.device, inspectionFor(ticket))}</span>
 </button>`;
   } else {
     li.innerHTML = `<button type="button" class="ticket-btn">
@@ -1025,6 +1035,11 @@ function render() {
     // Presentation only: patience comes directly from the unchanged engine.
     el.dataset.mood = left < 0.18 ? 'steaming' : left < 0.35 ? 'tapping' : left < 0.65 ? 'crossed' : 'calm';
     el.classList.toggle('focused', ticket === focus);
+    // Keep the carried device in sync when a repair restores power.
+    if (ticket.kind === 'repair' && el.dataset.artStage !== String(ticket.stage)) {
+      el.querySelector('.person')?.classList.toggle('device-unpowered', inspectionFor(ticket)?.physical.powered === false);
+      el.dataset.artStage = String(ticket.stage);
+    }
     el.querySelector('.ticket-btn').setAttribute('aria-current', ticket === focus ? 'true' : 'false');
     if (ticket.stages) {
       const stepChip = el.querySelector('.chip-step');
@@ -1135,6 +1150,7 @@ function frame(now) {
 // --- input ------------------------------------------------------------------------
 
 document.addEventListener('keydown', (e) => {
+  if (securityLab.isOpen()) return; // Native modal owns focus and Escape; never resume the background shift.
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (examDialog.open) {
     if (e.key === 'Escape') { e.preventDefault(); closeInspection(); return; }

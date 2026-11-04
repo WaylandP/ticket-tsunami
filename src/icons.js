@@ -139,7 +139,7 @@ const HOLD_POSES = {
 };
 
 /** Seated coworkers: continuous shoulders, rolled sleeves, forearms and device grips. */
-export function personSVG(name, device) {
+export function personSVG(name, device, observation = null) {
   const h=hashName(name), ceo=name==='The CEO', gary=name.startsWith('Gary'), jules=name==='Jules the intern', frank=name==='Frank, remote';
   const skin=AV_SKIN[h%4], hair=AV_HAIR[(h>>>4)%5], shirt=ceo?'var(--surface-2)':SHIRTS[(h>>>6)%5];
   const haircut=gary?5:ceo||frank?0:(h>>>2)%6, blazer=ceo||h%3===1;
@@ -160,7 +160,7 @@ export function personSVG(name, device) {
     <path d="M-8-15l4 8" stroke="var(--paper)" stroke-width="2" opacity=".3"/>
     ${tense?'<path d="M-10-5l8 3m1-9 5 3" stroke-width="1.6"/>':''}
   </g>`;
-  return `<svg aria-hidden="true" viewBox="0 0 320 310" class="person" fill="none" stroke="var(--art-ink)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+  return `<svg aria-hidden="true" viewBox="0 0 320 310" class="person${observation?.physical?.powered === false ? ' device-unpowered' : ''}" fill="none" stroke="var(--art-ink)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
     <g class="coworker-chair" stroke="var(--machine-edge)"><path d="M38 282L29 173Q24 127 58 121Q160 101 262 121Q296 127 291 173L282 282Z" fill="var(--machine-side)"/><path d="M44 267l-7-96q-3-35 24-41 99-18 198 0 27 6 24 41l-7 96z" fill="var(--surface-2)"/>
       ${[148,164,180,196,212,228,244].map(y=>`<path d="M43 ${y}h234" stroke="var(--line)" stroke-width="1" opacity=".65"/>`).join('')}
       ${[53,67,81,95,109,123,137,151,165,179,193,207,221,235,249,263].map(x=>`<path d="M${x} 139v112" stroke="var(--line)" stroke-width="1" opacity=".4"/>`).join('')}
@@ -302,103 +302,102 @@ export function deskSVG() {
 
 // --- close-up workbench art ---------------------------------------------------
 const artText = value => String(value).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
-const panel = (x, y, w, h, status, cue) => `
-  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="var(--display-bg)" stroke="var(--machine-edge)" stroke-width="3"/>
-  <path d="M${x+14} ${y+19}h${w-28}" stroke="var(--display-line)" stroke-width="2"/>
-  <circle cx="${x+16}" cy="${y+10}" r="2" fill="var(--display-text)"/>
-  <text x="${x+w/2}" y="${y+h*.52}" text-anchor="middle" fill="var(--display-text)" stroke="none" font-size="${w<150?11:16}" font-family="var(--font-mono)" font-weight="700">${artText(status)}</text>
-  <path d="M${x+w*.28} ${y+h*.7}h${w*.44}" stroke="var(--display-line)" stroke-width="5" stroke-linecap="round"/>
-  <path d="M${x+w*.28} ${y+h*.7}h${w*(cue==='update'?.12:.32)}" stroke="var(--display-text)" stroke-width="5" stroke-linecap="round"/>
-  ${cue==='locked' ? `<rect x="${x+w/2-10}" y="${y+26}" width="20" height="15" rx="3" fill="none" stroke="var(--display-text)" stroke-width="2"/><path d="M${x+w/2-6} ${y+26}v-5a6 6 0 0 1 12 0v5" stroke="var(--display-text)" stroke-width="2"/>` : ''}`;
 export const DEVICE_NAMES = { laptop:'Laptop', printer:'Printer', phone:'Phone', monitor:'Monitor', server:'Server', tv:'Room display' };
-
 export const DEVICE_HOTSPOTS = {
-  laptop: { screen:[140,125], power:[520,265], security:[140,215], ports:[520,210] },
-  printer: { screen:[385,100], power:[530,230], security:[190,192], ports:[520,210] },
-  phone: { screen:[210,140], power:[445,80], security:[445,205], ports:[445,320] },
-  monitor: { screen:[90,130], power:[550,265], security:[90,235], ports:[520,210] },
-  server: { screen:[140,95], power:[480,322], security:[140,190], ports:[520,210] },
-  tv: { screen:[75,120], power:[575,270], security:[75,230], ports:[520,210] },
+  laptop: { screen:[120,118], power:[528,272], security:[120,205] },
+  printer: { screen:[440,104], power:[530,230], security:[110,180] },
+  phone: { screen:[205,128], power:[440,82], security:[440,206], ports:[440,303] },
+  monitor: { screen:[75,125], power:[550,267], security:[75,230] },
+  server: { screen:[140,95], power:[490,320], security:[140,190] },
+  tv: { screen:[65,120], power:[575,270], security:[65,230] },
 };
+export const DEVICE_CONNECTION_VIEWS = {
+  laptop: { label:'Back & side ports', caption:'Rear lid, hinges and side connections.', hotspot:[563,341] },
+  printer: { label:'Rear connections', caption:'Paper feed, service door, USB and power sockets.', hotspot:[520,270] },
+  phone: { label:'Back & USB-C', caption:'Rear cameras and bottom charging port. Wireless settings are on the front.', hotspot:[440,313] },
+  monitor: { label:'Rear connections', caption:'Display inputs below the rear mounting plate.', hotspot:[514,280] },
+  server: { label:'Rear connections', caption:'Cooling fans, network interfaces and power supply.', hotspot:[516,250] },
+  tv: { label:'Rear connections', caption:'Source inputs on the rear panel.', hotspot:[534,270] },
+};
+const screenPanel = (x,y,w,h,status,cue) => {
+  const off=status==='NO POWER';
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="var(--display-bg)" stroke="var(--machine-edge)" stroke-width="2"/>
+    ${off?`<path d="M${x+12} ${y+12}h${w*.36}l-${w*.36} ${h*.52}z" fill="var(--paper)" opacity=".035"/>`:`<path d="M${x+12} ${y+20}h${w-24}" stroke="var(--display-line)" stroke-width="1"/><circle cx="${x+14}" cy="${y+10}" r="2" fill="var(--display-text)"/>
+    <text x="${x+w/2}" y="${y+h*.55}" text-anchor="middle" fill="var(--display-text)" stroke="none" font-size="${w<160?10:15}" font-family="var(--font-mono)">${artText(status)}</text>
+    ${cue==='update'?`<path d="M${x+w*.27} ${y+h*.72}h${w*.46}" stroke="var(--display-line)" stroke-width="5"/><path d="M${x+w*.27} ${y+h*.72}h${w*.15}" stroke="var(--display-text)" stroke-width="5"/>`:cue==='locked'?`<rect x="${x+w/2-10}" y="${y+h*.7}" width="20" height="15" rx="3" stroke="var(--display-text)"/><path d="M${x+w/2-6} ${y+h*.7}v-5a6 6 0 0 1 12 0v5" stroke="var(--display-text)"/>`:cue==='ready'?`<path d="M${x+w/2-7} ${y+h*.72}l5 5 10-12" stroke="var(--good)" stroke-width="3"/>`:''}`}`;
+};
+const inspectionScrews = points => points.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.3" fill="var(--machine-side)"/><path d="M${x-1} ${y}h2" stroke="var(--machine-edge)" stroke-width=".8"/>`).join('');
+const rearLabel=(x,y)=>`<rect x="${x}" y="${y}" width="83" height="29" rx="3" fill="var(--paper)"/><path d="M${x+7} ${y+7}h43" stroke="var(--art-ink)" stroke-width="2"/><path d="M${x+7} ${y+15}h66" stroke="var(--art-ink)" stroke-width="7" stroke-dasharray="1 2 3 2"/><text x="${x+7}" y="${y+25}" font-family="var(--font-mono)" font-size="6" fill="var(--art-ink)" stroke="none">IT ASSET / 042</text>`;
+const rearCable=(x,y,loose,type='display')=>`<g class="${loose?'connector-loose':'connector-seated'}" transform="translate(${x+(loose?43:0)} ${y})"><path d="M12 0h16q45 0 45 39t-54 33" stroke="var(--machine-edge)" stroke-width="8"/><path d="M12 0h16q45 0 45 39t-54 33" stroke="var(--shirt-blue)" stroke-width="4"/><rect x="-8" y="-8" width="25" height="16" rx="3" fill="var(--machine-side)"/><path d="M-16-5h8v10h-8z" fill="var(--machine-shell)"/>${type==='network'?'<path d="M-12-6h10v-4h-7z" fill="var(--paper)"/>':''}</g>`;
 
-export function inspectionDeviceSVG(device, observation, view = 'front') {
-  const cue = observation?.cue || 'ready';
-  const status = observation?.screen || 'READY';
-  const edge = 'var(--machine-edge)';
-  const front = 'var(--machine-shell)';
-  const dark = 'var(--machine-side)';
-  const loose = cue === 'loose';
-  const screws = (x,y,w,h) => [[x,y],[x+w,y],[x,y+h],[x+w,y+h]].map(([a,b])=>`<circle cx="${a}" cy="${b}" r="4" fill="var(--machine-side)"/><path d="M${a-2} ${b}h4" stroke="var(--machine-edge)" stroke-width="1"/>`).join('');
-  const keyboard = Array.from({length:4},(_,row)=>Array.from({length:11},(_,col)=>`<rect x="${160+col*26-row*4}" y="${278+row*14}" width="20" height="9" rx="2" fill="var(--machine-side)" stroke="var(--machine-edge)" stroke-width="1"/>`).join('')).join('');
-  let body;
-  if (view === 'rear' && device === 'phone') {
-    body = `<rect x="231" y="20" width="168" height="331" rx="27" fill="${front}" stroke="${edge}" stroke-width="4"/><rect x="244" y="34" width="52" height="72" rx="13" fill="${dark}" stroke="${edge}" stroke-width="2"/><circle cx="260" cy="53" r="9" fill="var(--display-bg)"/><circle cx="280" cy="81" r="9" fill="var(--display-bg)"/><circle cx="280" cy="52" r="4" fill="var(--paper)"/><path d="M285 316h60" stroke="${edge}" stroke-width="3"/><rect x="300" y="341" width="30" height="8" rx="3" fill="var(--display-bg)"/><path d="M263 335h17m70 0h17" stroke="${edge}" stroke-width="2" stroke-dasharray="2 3"/>`;
-  } else if (view === 'rear') {
-    const casing = device === 'printer'
-      ? `<path d="M188 110V32h228v78" fill="var(--paper)" stroke="${edge}" stroke-width="3"/><path d="M212 50h180m-180 15h180" stroke="var(--muted)" stroke-width="3"/><path d="M125 110l30-35h302l36 35v220H125z" fill="${dark}" stroke="${edge}" stroke-width="3"/><rect x="125" y="110" width="340" height="220" rx="16" fill="${front}" stroke="${edge}" stroke-width="4"/>`
-      : device === 'server'
-      ? `<path d="M140 24h325l28 27v310H140z" fill="${dark}" stroke="${edge}" stroke-width="3"/><rect x="125" y="24" width="340" height="337" rx="14" fill="${front}" stroke="${edge}" stroke-width="4"/><path d="M150 35h290m-290 313h290" stroke="${dark}" stroke-width="7"/>`
-      : device === 'monitor' || device === 'tv'
-      ? `<path d="M275 300h62l17 47h-96z" fill="${dark}" stroke="${edge}" stroke-width="3"/><path d="M231 347h151l22 14H210z" fill="${front}" stroke="${edge}" stroke-width="3"/><rect x="${device==='tv'?80:110}" y="48" width="${device==='tv'?440:380}" height="272" rx="17" fill="${dark}" stroke="${edge}" stroke-width="4"/><rect x="125" y="62" width="340" height="249" rx="20" fill="${front}" stroke="${edge}" stroke-width="3"/>`
-      : `<path d="M155 62h310l28 28v240H155z" fill="${dark}"/><rect x="125" y="62" width="340" height="268" rx="20" fill="${front}" stroke="${edge}" stroke-width="4"/><path d="M165 215h238v29H165z" fill="${dark}" stroke="${edge}" stroke-width="2"/><path d="M168 77h35m192 0h35m-262 237h35m192 0h35" stroke="${edge}" stroke-width="7"/>`;
-    body = `${casing}
-      ${screws(145,82,300,226)}
-      ${Array.from({length:9},(_,i)=>`<path d="M166 ${110+i*11}h128" stroke="${dark}" stroke-width="5"/>`).join('')}
-      <rect x="326" y="104" width="100" height="70" rx="6" fill="var(--paper)"/><path d="M340 122h70m-70 12h47m-47 12h57" stroke="var(--art-ink)" stroke-width="3"/>
-      <text x="376" y="162" fill="var(--art-ink)" stroke="none" text-anchor="middle" font-size="9" font-family="var(--font-mono)">ASSET · 042</text>
-      <rect x="153" y="263" width="285" height="43" rx="7" fill="${dark}"/>
-      <rect x="178" y="274" width="42" height="20" rx="3" fill="var(--display-bg)" stroke="${edge}" stroke-width="2"/><path d="M185 280h28m-28 7h28" stroke="var(--machine-shell)" stroke-width="2"/>
-      <rect x="249" y="274" width="35" height="20" rx="2" fill="var(--display-bg)"/><path d="M255 278v8m6-8v8m6-8v8m6-8v8" stroke="var(--sun)" stroke-width="2"/>
-      <rect x="382" y="270" width="42" height="28" rx="5" fill="var(--display-bg)" stroke="${edge}" stroke-width="2"/>
-      <g class="${loose?'connector-loose':'connector-seated'}" transform="translate(${loose?459:406} 284)">
-        <path d="M18 0h22q45 0 45 40t-70 35" fill="none" stroke="${edge}" stroke-width="9"/>
-        <path d="M18 0h22q45 0 45 40t-70 35" fill="none" stroke="var(--shirt-blue)" stroke-width="5"/>
-        <rect x="-9" y="-11" width="30" height="22" rx="4" fill="var(--machine-side)" stroke="${edge}" stroke-width="2"/>
-        <path d="M-18-6h9m-9 12h9" stroke="var(--sun)" stroke-width="4"/>
-      </g>`;
+export function inspectionDeviceSVG(device, observation, view='front') {
+  const cue=observation?.cue || 'ready', status=observation?.screen || 'READY';
+  const powered=observation?.physical?.powered ?? status!=='NO POWER';
+  const loose=cue==='loose', shell='var(--machine-shell)', side='var(--machine-side)', edge='var(--machine-edge)';
+  const indicator=powered?'var(--good)':'var(--display-bg)';
+  let body='';
+  if(view==='rear' && device==='laptop') {
+    body=`<g class="laptop-rear" transform="translate(0 55)">
+      <path d="M168 270l278-26 74-54-278 26z" fill="${shell}"/><path d="M168 270l278-26 74-54v11l-74 54-278 26z" fill="${side}"/>
+      <path d="M139 78q-2-13 12-15l252-23q13-1 16 12l27 192-278 26z" fill="${side}"/><path d="M143 78q-1-9 9-10l249-23q10-1 11 9l25 183-267 26z" fill="${shell}"/>
+      <path d="M156 80l239-22 24 169-239 23z" stroke="var(--paper)" opacity=".45" stroke-width="1.5"/>
+      <path d="M170 260l54-5 2 9-54 5zm219-20 49-5 2 9-49 5z" fill="${side}"/><path d="M176 264l46-4m171-15 44-4" stroke="var(--paper)" opacity=".5" stroke-width="1"/>
+      <path d="M190 274l232-21" stroke="${edge}" stroke-width="3" stroke-dasharray="1 3"/>
+      <path d="M174 278l268-25 73-53" stroke="var(--paper)" opacity=".6" stroke-width="1"/>
+      <g transform="translate(481 224) rotate(-36)"><rect x="-10" y="-4" width="20" height="8" rx="4" fill="var(--display-bg)"/><path d="M-6 0H6" stroke="${side}" stroke-width="1"/></g>
+      <g transform="translate(506 205) rotate(-36)"><path d="M-8-4H8L5 3H-5z" fill="var(--display-bg)"/></g>
+      <g class="${loose?'connector-loose':'connector-seated'}" transform="translate(${loose?535:484} ${loose?222:226}) rotate(-36)"><path d="M16 0h16q35 0 32 30t-42 35" stroke="${edge}" stroke-width="7"/><path d="M16 0h16q35 0 32 30t-42 35" stroke="var(--shirt-blue)" stroke-width="3.5"/><rect x="-6" y="-7" width="22" height="14" rx="4" fill="${side}"/><rect x="-18" y="-4" width="12" height="8" rx="3" fill="${shell}"/><path d="M-16 0h7" stroke="${edge}" stroke-width="1"/></g>
+      <circle cx="458" cy="242" r="1.8" fill="${indicator}" stroke="none"/>
+      <g transform="translate(192 211) rotate(-5)">${rearLabel(0,0)}</g>
+      <path d="M284 133l15-1 2 18-15 1z" fill="${side}" stroke-width="1.5"/><path d="M290 138l5 4-4 5" stroke="var(--paper)" stroke-width="1.3"/>
+    </g>`;
+  } else if(view==='rear' && device==='phone') {
+    body=`<path d="M238 34h156l9 9v302l-12 12H238z" fill="${side}"/><rect x="229" y="25" width="164" height="321" rx="26" fill="${shell}"/><path d="M243 38h136v291H243z" stroke="var(--paper)" stroke-width="1" opacity=".4"/>
+      <rect x="242" y="39" width="65" height="77" rx="17" fill="${side}"/><circle cx="260" cy="60" r="12" fill="var(--display-bg)"/><circle cx="287" cy="94" r="12" fill="var(--display-bg)"/><circle cx="260" cy="60" r="6" stroke="var(--display-line)"/><circle cx="287" cy="94" r="6" stroke="var(--display-line)"/><circle cx="286" cy="59" r="5" fill="var(--paper)"/>
+      ${rearLabel(265,274)}<path d="M294 347h35" stroke="var(--display-bg)" stroke-width="6"/><path d="M265 347h17m66 0h17" stroke="${edge}" stroke-width="3" stroke-dasharray="1 4"/>`;
+  } else if(view==='rear' && device==='printer') {
+    body=`<path d="M168 105V38h243v72" fill="var(--paper)"/><path d="M165 103l-32 30v191h346V133l-32-30z" fill="${side}"/><rect x="144" y="125" width="324" height="203" rx="14" fill="${shell}"/><path d="M174 145h229v107H174z" fill="${side}"/><path d="M261 154h59v10h-59z" fill="${edge}"/>
+      ${[185,196,207,218,229].map(y=>`<path d="M188 ${y}h200" stroke="${edge}" stroke-width="2"/>`).join('')}
+      ${rearLabel(178,275)}<path d="M365 275h22l4 5v20h-30v-20z" fill="var(--display-bg)"/><path d="M369 284h14v9h-14z" fill="${side}"/><path d="M417 275h25v24h-25z" fill="var(--display-bg)"/>${rearCable(430,287,loose,'power')}${inspectionScrews([[155,139],[453,139],[155,314],[453,314]])}`;
+  } else if(view==='rear' && device==='server') {
+    const power=observation?.physical?.connector==='power';
+    body=`<path d="M183 29h234l31 21v305H183z" fill="${side}"/><rect x="171" y="29" width="246" height="326" rx="8" fill="${shell}"/><path d="M185 41h218v299H185z" fill="${side}"/>
+      <circle cx="321" cy="114" r="49" fill="var(--display-bg)"/>${[16,28,39].map(r=>`<circle cx="321" cy="114" r="${r}" stroke="var(--display-line)" stroke-width="2"/>`).join('')}<path d="M285 79l72 70m0-70-72 70" stroke="${side}" stroke-width="3"/><circle cx="321" cy="114" r="10" fill="${side}"/>
+      <rect x="196" y="54" width="53" height="151" rx="4" fill="var(--display-bg)"/>${[70,94,118].map(y=>`<rect x="205" y="${y}" width="29" height="11" rx="2" fill="${side}"/><path d="M210 ${y+4}h19" stroke="var(--paper)" stroke-width="1"/>`).join('')}
+      <rect x="204" y="160" width="32" height="27" rx="2" fill="var(--display-bg)" stroke="var(--paper)" stroke-width="1"/><path d="M209 164v9m5-9v9m5-9v9m5-9v9m5-9v9" stroke="var(--sun)" stroke-width="1"/><circle cx="240" cy="181" r="2" fill="${loose&&!power?'var(--display-bg)':'var(--good)'}" stroke="none"/>
+      ${[218,234,250].map(y=>`<path d="M200 ${y}h183v10H200z" fill="var(--display-bg)"/><path d="M210 ${y+5}h143" stroke="${side}" stroke-width="2" stroke-dasharray="2 3"/>`).join('')}
+      <rect x="201" y="283" width="181" height="46" rx="3" fill="var(--display-bg)"/><path d="M211 291h72m-72 7h72m-72 7h72m-72 7h72" stroke="${side}" stroke-width="2"/><path d="M335 292h28l5 5v20h-38v-20z" fill="${side}"/>
+      ${power?rearCable(351,304,loose,'power'):`<g transform="translate(0 -1)">${rearCable(222,175,loose,'network')}</g>`}${inspectionScrews([[178,37],[410,37],[178,347],[410,347]])}`;
+  } else if(view==='rear') {
+    const tv=device==='tv', x=tv?87:119, w=tv?452:388;
+    body=`<rect x="${x}" y="53" width="${w}" height="253" rx="13" fill="${side}"/><rect x="${x+8}" y="60" width="${w-16}" height="238" rx="11" fill="${shell}"/><path d="M${x+25} 83h${w-50}" stroke="${side}" stroke-width="10" stroke-dasharray="2 4"/>
+      <path d="M259 125h108v119H259z" fill="${side}"/>${inspectionScrews([[270,137],[356,137],[270,231],[356,231]])}
+      ${tv?'<path d="M155 303l-28 44h37m312-44 27 44h-37" stroke-width="9"/>':`<path d="M289 180h48v132l23 36h-92l21-36z" fill="${side}"/><path d="M238 349h153l25 12H214z" fill="${shell}"/>`}
+      ${rearLabel(x+24,205)}<path d="M377 216h97v63h-97z" fill="${side}"/><path d="M389 233h25l-4 10h-17z" fill="var(--display-bg)"/><path d="M431 230h24v17h-24z" fill="var(--display-bg)"/><path d="M386 264h72" stroke="${edge}" stroke-width="1"/>${rearCable(442,239,loose)}
+      <path d="M${x+26} 287h${w-52}" stroke="${side}" stroke-width="3"/>`;
   } else if(device==='laptop') {
-    body = `<path d="M175 46h290v208H175z" fill="${dark}"/><rect x="159" y="38" width="306" height="211" rx="15" fill="${front}" stroke="${edge}" stroke-width="4"/>
-      ${panel(174,54,276,174,status,cue)}<circle cx="312" cy="46" r="3" fill="${edge}"/>
-      <path d="M159 250h306l88 94H78z" fill="${front}" stroke="${edge}" stroke-width="3"/>
-      <path d="M78 344h475l-18 18H97z" fill="${dark}" stroke="${edge}" stroke-width="3"/>
-      ${keyboard}<rect x="272" y="325" width="90" height="13" rx="3" fill="${dark}"/><circle cx="467" cy="270" r="9" fill="var(--good)" stroke="${edge}" stroke-width="2"/>
-      <path d="M469 266v6m-3-6a4 4 0 1 0 5 0" stroke="var(--paper)" stroke-width="1.5"/>
-      <path d="M105 351h56m322 0h38" stroke="${edge}" stroke-width="3"/>`;
+    body=`<g class="laptop-front"><rect x="158" y="35" width="316" height="208" rx="14" fill="${side}"/><rect x="162" y="38" width="308" height="201" rx="12" fill="${shell}"/>
+      ${screenPanel(173,52,286,171,status,cue)}<circle cx="316" cy="44" r="2" fill="var(--display-bg)"/><path d="M292 230h48" stroke="${side}" stroke-width="2"/>
+      <path d="M180 240h54v9h-54zm218 0h54v9h-54z" fill="${side}"/><path d="M163 249h307l75 92H87z" fill="${shell}"/><path d="M87 341h458l-15 13H101z" fill="${side}"/><path d="M92 342h447" stroke="var(--paper)" opacity=".6" stroke-width="1"/>
+      <path d="M177 259h277l35 43H144z" fill="${side}" stroke-width="1"/>
+      ${Array.from({length:4},(_,row)=>Array.from({length:12},(_,col)=>`<path d="M${180+col*22-row*4} ${264+row*9}h17l2 6h-19z" fill="var(--surface-2)" stroke="${edge}" stroke-width=".65"/>`).join('')).join('')}
+      <path d="M263 310h102l7 23H255z" fill="${side}" stroke-width="1"/><path d="M266 313h96" stroke="var(--paper)" stroke-width="1" opacity=".4"/>
+      <path d="M156 260l-26 38m341-38 26 38" stroke="${side}" stroke-width="7" stroke-dasharray="1 2"/>
+      <rect x="459" y="253" width="13" height="7" rx="3" fill="${indicator}" stroke-width="1"/>
+      <path d="M461 255h8" stroke="${powered?'var(--paper)':'var(--machine-side)'}" stroke-width="1"/>
+      <g transform="translate(408 314) scale(.55)">${rearLabel(0,0)}</g><path d="M288 344h58" stroke="${edge}" stroke-width="2"/></g>`;
   } else if(device==='phone') {
-    body = `<rect x="239" y="26" width="170" height="335" rx="28" fill="${dark}" stroke="${edge}" stroke-width="4"/><rect x="231" y="20" width="168" height="331" rx="27" fill="${front}" stroke="${edge}" stroke-width="4"/>
-      ${panel(242,44,146,275,status,cue)}<rect x="285" y="29" width="58" height="7" rx="4" fill="${edge}"/><circle cx="315" cy="335" r="7" fill="${dark}"/><path d="M403 104v32M228 95v23m0 12v23" stroke="${edge}" stroke-width="5"/>`;
+    body=`<path d="M243 28h155l8 9v306l-10 12H243z" fill="${side}"/><rect x="231" y="22" width="166" height="329" rx="26" fill="${shell}"/>${screenPanel(241,38,146,293,status,cue)}<rect x="292" y="42" width="44" height="8" rx="4" fill="${edge}"/><path d="M295 322h39" stroke="var(--paper)" stroke-width="3"/><path d="M401 96v29m-173-41v21m0 11v21" stroke-width="4"/>`;
   } else if(device==='printer') {
-    body = `<path d="M160 137l27-35h279l25 35v187H160z" fill="${dark}" stroke="${edge}" stroke-width="3"/>
-      <path d="M213 140V40h183v103" fill="var(--paper)" stroke="${edge}" stroke-width="3"/><path d="M237 68h134m-134 16h134m-134 16h75" stroke="var(--muted)" stroke-width="4"/>
-      <rect x="138" y="136" width="350" height="186" rx="22" fill="${front}" stroke="${edge}" stroke-width="4"/>
-      ${panel(318,153,120,58,status,cue)}<circle cx="459" cy="215" r="9" fill="var(--warn)" stroke="${edge}" stroke-width="2"/>
-      <rect x="170" y="235" width="248" height="31" rx="7" fill="${dark}" stroke="${edge}" stroke-width="3"/>
-      <path d="M200 251h185l-15 97H185z" fill="var(--paper)" stroke="${edge}" stroke-width="2"/><path d="M214 279h142m-146 14h142m-146 14h90" stroke="${cue==='update'?'var(--shirt-purple)':'var(--muted)'}" stroke-width="5"/>`;
+    body=`<path d="M153 142l28-38h286l28 38v179H153z" fill="${side}"/><path d="M211 142V43h190v101" fill="var(--paper)"/><path d="M234 69h145m-145 15h145m-145 15h90" stroke="var(--muted)" stroke-width="3"/><rect x="135" y="141" width="359" height="181" rx="20" fill="${shell}"/>${screenPanel(319,157,121,58,status,cue)}<circle cx="464" cy="205" r="7" fill="${indicator}"/><path d="M166 236h253v30H166z" fill="var(--display-bg)"/><path d="M201 252h187l-13 93H185z" fill="var(--paper)"/><path d="M211 274h144m-147 13h144m-147 13h83" stroke="var(--display-line)" stroke-width="3"/>${rearLabel(390,280)}`;
   } else if(device==='server') {
-    body = `<path d="M197 28h235l30 19v306H197z" fill="${dark}" stroke="${edge}" stroke-width="3"/>
-      <rect x="175" y="28" width="257" height="325" rx="14" fill="${front}" stroke="${edge}" stroke-width="4"/>
-      ${panel(195,50,216,88,status,cue)}
-      ${[157,212,267].map((y,i)=>`<rect x="192" y="${y}" width="222" height="43" rx="6" fill="${dark}" stroke="${edge}" stroke-width="2"/><path d="M207 ${y+13}h140m-140 9h140m-140 9h140" stroke="${front}" stroke-width="2"/><circle class="blink" cx="391" cy="${y+21}" r="5" fill="${i===0&&cue!=='ready'?'var(--warn)':'var(--good)'}"/>`).join('')}
-      <path d="M190 356v12m226-12v12" stroke="${edge}" stroke-width="10"/><circle cx="415" cy="330" r="6" fill="var(--good)"/>`;
+    body=`<path d="M192 30h231l30 22v300H192z" fill="${side}"/><rect x="173" y="30" width="249" height="322" rx="12" fill="${shell}"/>${screenPanel(190,48,215,87,status,cue)}${[154,207,260].map((y,i)=>`<rect x="190" y="${y}" width="214" height="42" rx="5" fill="var(--display-bg)"/><path d="M203 ${y+10}h151m-151 8h151m-151 8h151" stroke="var(--display-line)" stroke-width="2"/><circle cx="388" cy="${y+20}" r="4" fill="${powered?(i===0&&cue!=='ready'?'var(--warn)':'var(--good)'):'var(--display-bg)'}"/>`).join('')}<path d="M188 353v12m219-12v12" stroke-width="8"/><circle cx="398" cy="329" r="5" fill="${indicator}"/>`;
   } else {
-    const tv=device==='tv';
-    body = `<path d="M285 276h57l12 57h-83z" fill="${dark}" stroke="${edge}" stroke-width="3"/>
-      <path d="M240 332h147l22 15H219z" fill="${front}" stroke="${edge}" stroke-width="3"/>
-      <rect x="${tv?95:125}" y="40" width="${tv?440:380}" height="248" rx="17" fill="${front}" stroke="${edge}" stroke-width="4"/>
-      ${panel(tv?110:140,55,tv?410:350,210,status,cue)}
-      <circle cx="${tv?503:475}" cy="277" r="5" fill="var(--good)"/>
-      ${tv&&cue==='loose'?'<g class="ghost" fill="var(--display-text)"><circle cx="300" cy="195" r="4"/><circle cx="330" cy="195" r="4"/><path d="M302 208q13 8 26 0" fill="none" stroke="var(--display-text)" stroke-width="3"/></g>':''}`;
+    const tv=device==='tv',x=tv?90:120,w=tv?448:388;
+    body=`${tv?'<path d="M157 284l-29 61h39m302-61 29 61h-39" stroke-width="8"/>':`<path d="M286 280h55l16 53h-87z" fill="${side}"/><path d="M238 333h153l25 13H214z" fill="${shell}"/>`}
+      <rect x="${x}" y="43" width="${w}" height="244" rx="12" fill="${side}"/>${screenPanel(x+8,51,w-16,221,status,cue)}<circle cx="${x+w-16}" cy="280" r="2.5" fill="${indicator}" stroke="none"/>`;
   }
-  return `<svg class="exam-device-svg" aria-hidden="true" viewBox="0 0 640 400" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="320" cy="365" rx="245" ry="18" fill="var(--art-shadow)"/>
-    ${body}
-    <path d="M80 384h480" stroke="var(--mat-line)" stroke-width="2"/>
-    ${Array.from({length:25},(_,i)=>`<path d="M${80+i*20} 384v-${i%5===0?8:4}" stroke="var(--mat-line)" stroke-width="1"/>`).join('')}
-    <text x="82" y="27" font-family="var(--font-mono)" font-size="9" letter-spacing="1" fill="var(--ink)">IT / DIAGNOSTICS</text>
-    <path d="M555 335h28v32h-28z" fill="var(--surface)" stroke="var(--mat-line)" stroke-width="1.5"/>
-    <path d="M561 344h16m-16 7h16m-16 7h11" stroke="var(--muted)" stroke-width="1.5"/>
-    <path d="M68 336l-5 29" stroke="var(--machine-edge)" stroke-width="4"/><path d="M64 355l4-19" stroke="var(--accent)" stroke-width="7"/>
-  </svg>`;
+  return `<svg class="exam-device-svg" aria-hidden="true" viewBox="0 0 640 400" fill="none" stroke="${edge}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="320" cy="367" rx="245" ry="13" fill="var(--art-shadow)" stroke="none"/>${body}<path d="M66 385h510" stroke="var(--mat-line)" stroke-width="1"/>${Array.from({length:27},(_,i)=>`<path d="M${66+i*19} 385v-${i%5===0?6:3}" stroke="var(--mat-line)" stroke-width="1"/>`).join('')}</svg>`;
 }
 
 export function homeHeroSVG() {
@@ -418,4 +417,27 @@ export function homeHeroSVG() {
     </g>
     ${desk}
   </svg>`;
+}
+
+// Security training art shares the same outline, equipment and theme tokens.
+export function securityIcon(kind='shield') {
+  const paths={
+    shield:'<path d="M12 3l8 3v6q0 6-8 10-8-4-8-10V6z"/><path d="M8 12l3 3 5-6"/>',
+    mail:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6m-16 11 5-5m11 5-5-5"/>',
+    phone:'<rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 5h4m-3 14h2M12 9v4m0 3v.1"/>',
+    usb:'<path d="M8 9V3h8v6m-6-3v1m4-1v1"/><rect x="6" y="9" width="12" height="13" rx="4"/><path d="M10 13h4"/>',
+    endpoint:'<rect x="3" y="3" width="18" height="13" rx="2"/><path d="M9 21h6m-3-5v5M12 7v3m0 3v.1"/>',
+    share:'<path d="M3 8V5h7l2 3h9v12H3z"/><path d="M12 12v5m-3-3 3-3 3 3"/>',
+    update:'<path d="M20 9a8 8 0 0 0-14-3L3 9m0-5v5h5M4 15a8 8 0 0 0 14 3l3-3m0 5v-5h-5"/>',
+  };
+  return svg(paths[kind] || paths.shield);
+}
+export function securityArtifactSVG(kind='shield') {
+  const shield='<path d="M220 45l63 24v53q0 42-63 74-63-32-63-74V69z" fill="var(--accent-soft)"/><path d="M190 115l22 23 41-49" stroke="var(--accent)" stroke-width="10"/>';
+  const body=kind==='usb'?`<g transform="translate(120 30) rotate(-12 100 90)"><path d="M58 3h84v69H58z" fill="var(--machine-shell)"/><path d="M76 18h14v28H76zm34 0h14v28h-14z" fill="var(--display-bg)"/><rect x="38" y="64" width="124" height="115" rx="26" fill="var(--machine-side)"/><rect x="54" y="84" width="92" height="50" rx="7" fill="var(--paper)"/><path d="M68 98h62m-62 12h41m-41 12h52" stroke="var(--art-ink)" stroke-width="3"/><path d="M81 157h38" stroke="var(--paper)" stroke-width="3"/></g>`
+    :kind==='phone'?`<rect x="154" y="13" width="132" height="202" rx="24" fill="var(--machine-side)"/><rect x="162" y="21" width="116" height="186" rx="19" fill="var(--display-bg)"/><path d="M202 30h36" stroke="var(--machine-side)" stroke-width="5"/><circle cx="220" cy="88" r="27" fill="var(--warn-soft)"/><path d="M220 70v20m0 9v1" stroke="var(--warn)" stroke-width="5"/><path d="M180 132h80m-69 11h58" stroke="var(--display-line)" stroke-width="4"/><rect x="178" y="164" width="84" height="24" rx="6" fill="var(--accent-soft)"/><path d="M201 176h38" stroke="var(--accent)" stroke-width="3"/>`
+    :kind==='mail'?`<path d="M94 70l126-51 126 51v130H94z" fill="var(--machine-side)"/><rect x="122" y="43" width="196" height="131" rx="9" fill="var(--paper)"/><path d="M145 68h146m-146 17h110m-110 17h133" stroke="var(--display-line)" stroke-width="4"/><path d="M94 74l126 82L346 74v126H94z" fill="var(--machine-shell)"/><path d="M94 200l85-70m167 70-85-70"/><circle cx="329" cy="64" r="31" fill="var(--warn-soft)"/><path d="M329 48v19m0 9v1" stroke="var(--warn)" stroke-width="5"/>`
+    :kind==='share'?`<path d="M99 79V48h88l23 26h129v123H99z" fill="var(--machine-side)"/><path d="M95 91h251l-19 110H111z" fill="var(--machine-shell)"/><path d="M219 115v53m-20-33 20-20 20 20" stroke="var(--accent)" stroke-width="7"/><circle cx="326" cy="60" r="28" fill="var(--warn-soft)"/><path d="M326 44v18m0 9v1" stroke="var(--warn)" stroke-width="4"/>`
+    :kind==='endpoint'||kind==='update'?`<rect x="97" y="31" width="246" height="153" rx="12" fill="var(--machine-shell)"/><rect x="108" y="43" width="224" height="127" rx="6" fill="var(--display-bg)"/><path d="M98 184h244l38 27H60z" fill="var(--machine-side)"/>${kind==='endpoint'?'<path d="M220 61l36 64h-72z" fill="var(--warn-soft)"/><path d="M220 80v18m0 9v1" stroke="var(--warn)" stroke-width="5"/>':'<path d="M220 63v54m-18-18 18 18 18-18" stroke="var(--good)" stroke-width="7"/><path d="M172 144h96" stroke="var(--display-line)" stroke-width="7"/><path d="M172 144h68" stroke="var(--good)" stroke-width="7"/>'}`:shield;
+  return `<svg aria-hidden="true" viewBox="0 0 440 230" fill="none" stroke="var(--machine-edge)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="220" cy="209" rx="150" ry="12" fill="var(--art-shadow)" stroke="none"/><path d="M32 212h376" stroke="var(--mat-line)" stroke-width="1"/>${body}</svg>`;
 }

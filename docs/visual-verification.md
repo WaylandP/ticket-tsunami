@@ -1,5 +1,9 @@
 # Repair studio verification
 
+For the latest device-art and Cyber lab update (63 passing tests), see
+[security training verification](security-training.md). The report below records
+the earlier repair-studio release and its broader timed/practice checks.
+
 Verified 2026-11-04 using the static app, served with
 `python3 -m http.server 8000`, and Chromium through the preinstalled Playwright
 runtime. No packages were installed. Browser time was advanced with Playwright's
