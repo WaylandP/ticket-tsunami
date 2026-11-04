@@ -1,48 +1,59 @@
 # Corporate IT office verification
 
-Verified 2026-11-04. Visual presentation changes only; no gameplay or case changes.
+Verified 2026-11-04 after the coworker anatomy rebuild. Presentation only.
+
+## What changed
+
+The old right sleeve used a relative move after the left sleeve and did not
+share the arm's shoulder coordinates. Both sides now use one local shoulder,
+rolled-cuff and forearm shape, mirrored around the body center. Each of the six
+devices has explicit placement and grip coordinates. The old body-width offset
+no longer affects shoulder alignment. Hannah's reported laptop pose and all six
+held-device silhouettes were visually reviewed in a coworker gallery.
+
+Coworkers sit at a full-width workbench with connected forearms, larger equipment,
+visible grips, chair mesh, badges and watches. Cable reels, tools, a device dock,
+ceiling fixtures, layered back-office windows and desk detail bring the actual
+scene closer to the office concept. The home illustration now reuses the same
+room, coworker and bench art. No raster concept is shipped in the game.
 
 ## Automated checks
 
-- `node --test`: 56/56, including all 44 original engine tests.
+- `node --test`: 56/56 passed, including the original engine tests.
 - `node --check` and `git diff --check`: passed.
 - Engine blob unchanged: `7070e1a407e1c739e1b34fd5cb1664515c7860a6`.
-- Every CSS custom-property declaration matches the pre-change stylesheet.
-- The primary ink, muted and accent text/background pairs pass 4.5:1 in both themes.
-- 198 SVG outputs parsed as XML, with name determinism and no IDs, defs,
-  external images, undefined values or NaN. All six held devices were reviewed.
+- All CSS custom-property declarations match the previous release exactly.
+  Previously checked primary text pairs retain their contrast of at least 4.5:1.
+- 130 SVG outputs: 21 names × six devices plus room, bench, desk and home.
+  XML parsing, deterministic output and no IDs, defs, external images,
+  undefined values or NaN were checked.
+- The global reduced-motion override remains last in the stylesheet.
 
-## Browser verification
+## Browser checks
 
-The static source was served through the managed preview. A temporary, untracked
-QA page framed the game at exact viewport dimensions. Theme copies activated the
-existing light or dark media blocks without changing their values. A preview-only
-clock adapter advanced animation-frame time for timed playthroughs; all ticket
-and repair actions used browser UI controls. QA helpers are not shipped.
+A temporary untracked QA page frames the actual source at exact viewport sizes.
+Theme copies activate the existing light or dark media blocks without changing
+their values. A preview-only clock adapter advances animation-frame time; all
+repair actions use the normal game UI. QA helpers are not shipped.
 
-| Theme | Viewport | Checks |
-| --- | --- | --- |
-| Light | 1280 x 800 | Home fits, timed multi-step repair, expirations, shift report |
-| Dark | 1280 x 800 | Home fits, three-stage server repair, two visitors, impatience, expirations, report |
-| Light | 390 x 844 | Home fits, three-stage room-display repair, wrong-action feedback, two visitors, report |
-| Dark | 390 x 844 | Home fits, timed repair, pause/resume, expirations, report; untimed phone repair, email, Next case, Finish |
-| Both | 375 x 812 | Home fits with all primary settings visible |
+| Theme / viewport | Result |
+| --- | --- |
+| Both / 1280 × 800 | Home fits without scrolling; controls at least 44px |
+| Both / 390 × 844 | Home fits without scrolling; controls at least 44px |
+| Both / 375 × 812 | Home fits without scrolling; controls at least 44px |
+| Dark / 1280 × 800 | Actual Hannah/laptop pose reviewed at the connected bench |
+| Light / 390 × 844 | Two simultaneous coworkers, monitor and room display; no overflow; complete two-stage monitor repair |
+| Dark / 375 × 812 | Practice phone repair, email resolution, Next case, pause/resume and Finish report |
+| Dark / desktop | Home and game documentation screenshots captured from the actual preview |
 
-- No horizontal/vertical home scrolling at all six combinations.
-- Visible home and sampled play controls meet the 44px minimum.
-- No duplicate DOM IDs; no application console errors. Browser-extension logs
-  were excluded from the application-error check.
-- Two simultaneous phone visitors remain readable and leave room for the inbox.
-- Reduced-motion global override remains last in the stylesheet.
-- Screenshots in README are actual browser captures, not the generated concept.
-- These tests end timed games through normal expirations; they do not claim a new
-  survival-to-overtime run. Existing engine tests cover clock and overtime logic.
+No duplicate DOM IDs or application console errors were found. Extension logs
+are excluded from the application-error check. This revision does not claim a
+new full survival-to-overtime playthrough; existing logic tests remain green.
 
 ## DOM contract
 
-No existing renderer selector was renamed or removed. `.ticket-btn`, `.bubble`,
-`.figure`, `.ticket-hint` and `dataset.fix`, `.patience-fill`, `.chip-step`,
-`.ticket-text`, `.ticket-from`, and the ticket-ID `cards` Map retain their bindings.
-The decorative `.counter` children were replaced by inline art mounted at the new
-`#repair-bench-art`; `main.js` imports `repairBenchSVG` and initializes that element.
-Other `main.js` changes only update visible/accessibility wording.
+No renderer binding changed: `.ticket-btn`, `.bubble`, `.figure`, `.ticket-hint`
+and `dataset.fix`, `.patience-fill`, `.chip-step`, `.ticket-text`, `.ticket-from`,
+and the ticket-ID `cards` Map are intact. No matching `main.js` edits were needed;
+`main.js`, `index.html`, the case catalog and `engine.js` are unchanged.
+Only decorative SVG descendants and presentation styles changed.
