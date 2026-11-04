@@ -19,12 +19,18 @@ A box gets checked only when the work is built, tested and visible in the game.
 - [x] Sound effects, synthesized in the browser (no audio files), with a mute button
 - [x] Special tickets: junk mail (bonus to flag, free to ignore), reopened tickets, fire drills (8s double points)
 - [x] Power-ups: every 10-ticket streak earns a charge for Coffee, Wiki or Auto-reply
-- [x] Ten achievements, earned on the shift report and saved in the browser
+- [x] Eleven achievements, earned on the shift report and saved in the browser
+- [x] A 90-second guided training shift with a coach and no way to fail
+- [x] Shift insights: up to three plain-English observations on the report
+- [x] Employee file: lifetime stats and recent daily results
+- [x] Regulars with habits: Gary (passwords), Frank (connection), Jules (self-fixes)
+- [x] The Monday boss: a three-step projector ticket that pays big
+- [x] Night Shift: start at 5 PM at full heat and survive
+- [x] Lofi radio, synthesized in the browser: Off / Auto / Slow / Medium / Fast, auto-matched to the day
 
 ## Next
 
 - [ ] Even more ticket variety
-- [ ] A short tutorial first shift
 - [ ] Installable as an app (PWA) and playable offline
 - [ ] Progress export/import code — move your stats between devices, still no server
 - [ ] Accounts and cloud sync — needs a real backend, which breaks the static-only rule; a deliberate decision for later

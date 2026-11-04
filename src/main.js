@@ -2,16 +2,16 @@ import {
   FIXES, MAX_QUEUE, MAX_CSAT, SHIFT_MS, DIFFICULTIES, DEFAULT_DIFFICULTY,
   POWERS, ACHIEVEMENTS,
   createGame, tick, applyFix, usePower, mostUrgent, multiplier, clock, summary,
-  difficultyFor, evaluateAchievements,
+  difficultyFor, evaluateAchievements, shiftInsights,
 } from './engine.js';
 import { FIX_ICONS, face } from './icons.js';
-import { play, setMuted, isMuted } from './sound.js';
+import { play, setMuted, isMuted, music } from './sound.js';
 
 const $ = (id) => document.getElementById(id);
 const app = $('app');
 const queueEl = $('queue');
 const floodEl = $('flood');
-const screens = { start: $('start-screen'), pause: $('pause-screen'), over: $('over-screen') };
+const screens = { start: $('start-screen'), pause: $('pause-screen'), over: $('over-screen'), stats: $('stats-screen') };
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const SHORT = { restart: 'Restart', password: 'Password', connect: 'Connection', update: 'Update', notit: 'Not IT' };
@@ -19,7 +19,14 @@ const FIX_LABEL = Object.fromEntries(FIXES.map((f) => [f.id, f.label]));
 
 let game = null;
 let running = false;
-let mode = 'free'; // 'free' | 'daily'
+let mode = 'free'; // 'free' | 'daily' | 'tutorial' | 'endless'
+const COACH = {
+  restart: 'Frozen and unresponsive? Click Restart it — or press 1.',
+  password: 'Locked out means a password reset. That’s 2.',
+  connect: 'Nothing loads, cable on the floor… Check connection. Press 3.',
+  update: 'Software from 2019 wants an update. Press 4.',
+  notit: 'A sad coffee machine is tragic — but Not an IT problem. Press 5.',
+};
 let selectedId = null; // a ticket the player clicked; otherwise we focus the most urgent
 let last = 0;
 const cards = new Map(); // ticket id -> <li>
@@ -75,6 +82,132 @@ function loadDaily() {
 }
 function saveDaily(result) {
   try { localStorage.setItem('ticket-tsunami:daily', JSON.stringify(result)); } catch { /* private mode etc. */ }
+}
+
+// --- music preference ----------------------------------------------------------
+
+const MUSIC_CHOICES = [
+  { id: 'off', label: 'Off' },
+  { id: 'auto', label: 'Auto' },
+  { id: 'slow', label: 'Slow' },
+  { id: 'medium', label: 'Med' },
+  { id: 'fast', label: 'Fast' },
+];
+let musicPref = (() => {
+  try {
+    const m = localStorage.getItem('ticket-tsunami:music');
+    return MUSIC_CHOICES.some((c) => c.id === m) ? m : 'auto';
+  } catch { return 'auto'; }
+})();
+
+function buildMusicPicker() {
+  const row = $('music');
+  for (const c of MUSIC_CHOICES) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'music-btn';
+    btn.dataset.music = c.id;
+    btn.textContent = c.label;
+    btn.addEventListener('click', () => {
+      musicPref = c.id;
+      try { localStorage.setItem('ticket-tsunami:music', c.id); } catch { /* fine */ }
+      renderMusicPicker();
+    });
+    row.append(btn);
+  }
+  renderMusicPicker();
+}
+
+function renderMusicPicker() {
+  for (const btn of document.querySelectorAll('.music-btn')) {
+    btn.setAttribute('aria-pressed', String(btn.dataset.music === musicPref));
+  }
+}
+
+/** Auto picks the tempo for the day: Monday means fast. Your choice wins. */
+function resolveTempo() {
+  if (musicPref !== 'auto') return musicPref;
+  if (mode === 'tutorial') return 'slow';
+  if (mode === 'endless') return 'fast';
+  if (mode === 'daily') return 'medium';
+  return { friday: 'slow', nineToFive: 'medium', monday: 'fast' }[difficulty] || 'medium';
+}
+
+function startMusic() {
+  if (musicPref !== 'off') music.start(resolveTempo());
+}
+
+// --- the coach (tutorial) -------------------------------------------------------
+
+function coach(fixId) {
+  const el = $('coach');
+  for (const btn of document.querySelectorAll('.fix')) btn.classList.remove('coach-target');
+  if (!fixId) { el.hidden = true; return; }
+  $('coach-text').textContent = COACH[fixId];
+  el.hidden = false;
+  document.querySelector(`.fix[data-fix="${fixId}"]`)?.classList.add('coach-target');
+}
+
+// --- lifetime stats --------------------------------------------------------------
+
+function loadStats() {
+  try {
+    return { shifts: 0, closed: 0, wrong: 0, expired: 0, totalScore: 0, fiveOClocks: 0, bosses: 0, dailies: {}, ...JSON.parse(localStorage.getItem('ticket-tsunami:stats')) };
+  } catch {
+    return { shifts: 0, closed: 0, wrong: 0, expired: 0, totalScore: 0, fiveOClocks: 0, bosses: 0, dailies: {} };
+  }
+}
+function saveStats(st) {
+  try { localStorage.setItem('ticket-tsunami:stats', JSON.stringify(st)); } catch { /* fine */ }
+}
+
+function recordShift(s) {
+  const st = loadStats();
+  st.shifts++;
+  st.closed += s.closed;
+  st.wrong += s.wrong;
+  st.expired += s.expired;
+  st.totalScore += s.score;
+  if (s.madeItToFive) st.fiveOClocks++;
+  st.bosses += s.bossesClosed;
+  if (mode === 'daily') st.dailies[todayKey()] = { score: s.score, clock: s.clock };
+  const days = Object.keys(st.dailies).sort();
+  while (days.length > 30) delete st.dailies[days.shift()];
+  saveStats(st);
+}
+
+function openStats() {
+  const st = loadStats();
+  const unlocked = loadSet('ticket-tsunami:achievements');
+  const attempts = st.closed + st.wrong;
+  const rows = [
+    ['Shifts worked', st.shifts],
+    ['Tickets closed', st.closed.toLocaleString()],
+    ['Lifetime accuracy', attempts ? `${Math.round((st.closed / attempts) * 100)}%` : '—'],
+    ['5 PMs reached', st.fiveOClocks],
+    ['Total score', st.totalScore.toLocaleString()],
+    ['Achievements', `${unlocked.size}/${ACHIEVEMENTS.length}`],
+  ];
+  $('career-stats').replaceChildren(...rows.map(([dt, dd]) => {
+    const div = document.createElement('div');
+    div.innerHTML = '<dt></dt><dd></dd>';
+    div.querySelector('dt').textContent = dt;
+    div.querySelector('dd').textContent = dd;
+    return div;
+  }));
+  const days = Object.keys(st.dailies).sort().reverse().slice(0, 7);
+  const list = $('daily-history');
+  list.replaceChildren(...days.map((day) => {
+    const li = document.createElement('li');
+    li.textContent = `${day} — ${st.dailies[day].score.toLocaleString()} pts, until ${st.dailies[day].clock}`;
+    return li;
+  }));
+  if (!days.length) {
+    const li = document.createElement('li');
+    li.textContent = 'No dailies yet. The storm waits.';
+    list.append(li);
+  }
+  show('stats');
 }
 
 function updateDailyCard() {
@@ -181,7 +314,7 @@ function buildFaces() {
 function show(name) {
   app.dataset.screen = name;
   for (const [key, el] of Object.entries(screens)) el.hidden = key !== name;
-  const focusTarget = { start: 'start-btn', pause: 'resume-btn', over: 'again-btn' }[name];
+  const focusTarget = { start: 'start-btn', pause: 'resume-btn', over: 'again-btn', stats: 'stats-back-btn' }[name];
   if (focusTarget) $(focusTarget).focus({ preventScroll: true });
 }
 
@@ -192,13 +325,19 @@ function startShift(newMode = 'free') {
   cards.clear();
   queueEl.replaceChildren();
   selectedId = null;
-  game = mode === 'daily'
-    ? createGame(dailySeed(todayKey()), DEFAULT_DIFFICULTY)
-    : createGame((Date.now() ^ (Math.random() * 1e9)) | 0, difficulty);
+  const randomSeed = (Date.now() ^ (Math.random() * 1e9)) | 0;
+  if (mode === 'daily') game = createGame(dailySeed(todayKey()), DEFAULT_DIFFICULTY);
+  else if (mode === 'tutorial') game = createGame(randomSeed, DEFAULT_DIFFICULTY, 'tutorial');
+  else if (mode === 'endless') game = createGame(randomSeed, difficulty, 'endless');
+  else game = createGame(randomSeed, difficulty);
+  app.classList.toggle('overtime', mode === 'endless');
+  coach(null);
   show('play');
   running = true;
   last = performance.now();
+  startMusic();
   render();
+  if (mode === 'endless') banner('The night shift.', 'It’s 5 PM. The day crew went home. You didn’t.');
 }
 
 /** Back to the start screen: clean floor, fresh HUD, no game. */
@@ -206,6 +345,8 @@ function goHome() {
   running = false;
   game = null;
   selectedId = null;
+  music.stop();
+  coach(null);
   for (const el of cards.values()) el.remove();
   cards.clear();
   queueEl.replaceChildren();
@@ -229,6 +370,7 @@ function goHome() {
 function pause() {
   if (!running) return;
   running = false;
+  music.stop();
   show('pause');
 }
 
@@ -237,18 +379,25 @@ function resume() {
   show('play');
   running = true;
   last = performance.now();
+  startMusic();
 }
 
 function endShift() {
   running = false;
+  music.stop();
+  coach(null);
   const s = summary(game);
-  const best = loadBest(s.difficulty);
+  const tutorial = s.mode === 'tutorial';
+  const endless = s.mode === 'endless';
+  const bestKey = endless ? `endless:${s.difficulty}` : s.difficulty;
+  const best = tutorial ? null : loadBest(bestKey);
   const isBest = !best || s.score > best.score;
-  if (isBest && s.score > 0) saveBest(s.difficulty, { score: s.score, clock: s.clock, rank: s.rank });
+  if (!tutorial && isBest && s.score > 0) saveBest(bestKey, { score: s.score, clock: s.clock, rank: s.rank });
   if (mode === 'daily' && !loadDaily()) {
     saveDaily({ date: todayKey(), score: s.score, clock: s.clock, rank: s.rank });
     updateDailyCard();
   }
+  if (!tutorial) recordShift(s);
 
   // Achievements: what this shift earned, and which of those are new forever.
   const earned = evaluateAchievements(s);
@@ -270,9 +419,26 @@ function endShift() {
   countEl.hidden = unlocked.size === 0;
   countEl.textContent = `Achievements: ${unlocked.size} of ${ACHIEVEMENTS.length} unlocked`;
 
-  const dayLabel = mode === 'daily' ? `Daily Shift · ${dailyLabel()}` : s.difficultyLabel;
-  $('over-eyebrow').textContent = `Shift report · ${dayLabel}${s.madeItToFive ? ' · Overtime survivor' : ''}`;
-  $('r-clock').textContent = s.clock;
+  // Notes from your manager.
+  const notes = tutorial
+    ? ['Training complete. Now try a Casual Friday — the tickets won’t be this polite.']
+    : shiftInsights(s);
+  const insightsEl = $('r-insights');
+  insightsEl.hidden = !notes.length;
+  insightsEl.replaceChildren(...notes.map((n) => {
+    const li = document.createElement('li');
+    li.textContent = n;
+    return li;
+  }));
+
+  const dayLabel = tutorial ? 'Training'
+    : endless ? `Night Shift · ${s.difficultyLabel}`
+    : mode === 'daily' ? `Daily Shift · ${dailyLabel()}` : s.difficultyLabel;
+  $('over-eyebrow').textContent = `Shift report · ${dayLabel}${s.madeItToFive && !endless && !tutorial ? ' · Overtime survivor' : ''}`;
+  $('over-title').innerHTML = tutorial
+    ? 'You’re ready for the real thing'
+    : endless ? 'You survived until <span id="r-clock"></span>' : 'You lasted until <span id="r-clock"></span>';
+  if (!tutorial) $('r-clock').textContent = s.clock;
   $('r-rank').textContent = s.rank;
   $('r-score').textContent = s.score.toLocaleString();
   $('r-closed').textContent = s.closed;
@@ -281,12 +447,16 @@ function endShift() {
   $('r-expired').textContent = s.expired + s.overflowed;
   $('r-self').textContent = s.selfFixed;
   $('r-newbest').hidden = !(isBest && s.score > 0 && best);
-  $('share-text').textContent = shareText(s);
+  $('share-btn').hidden = tutorial;
+  $('share-text').textContent = tutorial ? '' : shareText(s);
   show('over');
   announce(`Shift over at ${s.clock}. Score ${s.score}. Rank: ${s.rank}.`);
 }
 
 function shareText(s) {
+  if (s.mode === 'endless') {
+    return `Ticket Tsunami Night Shift (${s.difficultyLabel}): survived until ${s.clock}, closed ${s.closed} tickets, ${s.score.toLocaleString()} points. Rank: ${s.rank}.`;
+  }
   if (mode === 'daily') {
     return `Ticket Tsunami Daily · ${dailyLabel()}\n🌊 Lasted until ${s.clock} · ${s.score.toLocaleString()} pts\n🎫 ${s.closed} closed · 🎯 ${s.accuracy}% · 🔥 streak ${s.bestStreak}\nRank: ${s.rank}\nhttps://ticket-tsunami.vercel.app`;
   }
@@ -316,9 +486,16 @@ function useFix(fixId, sourceBtn) {
   }
   const res = applyFix(game, target.id, fixId);
   pulse(sourceBtn || document.querySelector(`.fix[data-fix="${fixId}"]`), res.type);
+  if (res.type === 'progress') {
+    play('charge');
+    toast(`Step ${res.stage + 1} of ${res.total}. Keep going.`);
+    render();
+    return;
+  }
   if (res.type === 'correct') {
     removeCard(res.ticket.id, 'out-fixed', `+${res.points}`);
     if (selectedId === res.ticket.id) selectedId = null;
+    if (game.mode === 'tutorial') coach(null);
     if (res.charge) {
       play('charge');
       toast(`${res.streak} in a row — power charge earned. ⚡`);
@@ -364,6 +541,11 @@ function handleEvents(events) {
     switch (ev.type) {
       case 'spawn':
         play('spawn');
+        if (game && game.mode === 'tutorial') coach(ev.ticket.fix);
+        break;
+      case 'tutorialDone':
+        running = false;
+        setTimeout(endShift, reduceMotion.matches ? 0 : 450);
         break;
       case 'expired':
         removeCard(ev.ticket.id, 'out-expired', 'Escalated!');
@@ -414,6 +596,7 @@ function createCard(ticket) {
   li.className = 'ticket' + (ticket.vip ? ' vip' : '') + (ticket.kind === 'spam' ? ' spam' : '');
   li.dataset.id = ticket.id;
   const chip = ticket.vip ? '<span class="chip chip-vip">VIP · 2x</span>'
+    : ticket.kind === 'boss' ? '<span class="chip chip-boss">Step 1 of 3</span>'
     : ticket.kind === 'spam' ? '<span class="chip chip-spam">Sus · 1.5x</span>'
     : ticket.kind === 'reopen' ? '<span class="chip chip-re">Reopened</span>' : '';
   li.innerHTML = `<button type="button" class="ticket-btn">
@@ -461,10 +644,16 @@ function render() {
     el.classList.toggle('urgent', left < 0.35);
     el.classList.toggle('focused', ticket === focus);
     el.querySelector('.ticket-btn').setAttribute('aria-current', ticket === focus ? 'true' : 'false');
+    if (ticket.stages) {
+      const bossChip = el.querySelector('.chip-boss');
+      if (bossChip) bossChip.textContent = `Step ${ticket.stage + 1} of ${ticket.stages.length}`;
+    }
     const hint = el.querySelector('.ticket-hint');
     const showHint = ticket.hint || ticket.id <= 3;
-    if (showHint !== !hint.hidden) {
+    // Re-render when visibility flips, or when a boss ticket moves to its next step.
+    if (showHint !== !hint.hidden || (showHint && hint.dataset.fix !== ticket.fix)) {
       hint.hidden = !showHint;
+      hint.dataset.fix = ticket.fix;
       hint.innerHTML = `${FIX_ICONS[ticket.fix]}<span>${ticket.hint ? 'Try' : 'Tip'}: ${FIX_LABEL[ticket.fix]}</span>`;
       hint.className = `ticket-hint hint-${ticket.fix}`;
     }
@@ -570,6 +759,10 @@ document.addEventListener('visibilitychange', () => {
 
 $('start-btn').addEventListener('click', () => startShift('free'));
 $('daily-btn').addEventListener('click', () => startShift('daily'));
+$('endless-btn').addEventListener('click', () => startShift('endless'));
+$('tutorial-btn').addEventListener('click', () => startShift('tutorial'));
+$('stats-btn').addEventListener('click', openStats);
+$('stats-back-btn').addEventListener('click', () => show('start'));
 $('again-btn').addEventListener('click', () => startShift('free'));
 $('menu-btn').addEventListener('click', goHome);
 $('pause-btn').addEventListener('click', pause);
@@ -613,6 +806,7 @@ buildPips();
 buildFaces();
 buildDiffPicker();
 buildPowers();
+buildMusicPicker();
 updateDailyCard();
 show('start');
 requestAnimationFrame((now) => { last = now; frame(now); });
