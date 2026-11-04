@@ -280,12 +280,12 @@ const panel = (x, y, w, h, status, cue) => `
 export const DEVICE_NAMES = { laptop:'Laptop', printer:'Printer', phone:'Phone', monitor:'Monitor', server:'Server', tv:'Room display' };
 
 export const DEVICE_HOTSPOTS = {
-  laptop: { screen:[310,140], power:[465,275], security:[260,215], ports:[425,285] },
-  printer: { screen:[375,182], power:[458,218], security:[265,182], ports:[425,285] },
-  phone: { screen:[320,155], power:[408,118], security:[320,245], ports:[325,320] },
-  monitor: { screen:[320,145], power:[488,264], security:[230,220], ports:[425,285] },
-  server: { screen:[320,100], power:[430,318], security:[215,100], ports:[425,285] },
-  tv: { screen:[320,145], power:[500,275], security:[225,225], ports:[425,285] },
+  laptop: { screen:[140,125], power:[520,265], security:[140,215], ports:[520,210] },
+  printer: { screen:[385,100], power:[530,230], security:[190,192], ports:[520,210] },
+  phone: { screen:[210,140], power:[445,80], security:[445,205], ports:[445,320] },
+  monitor: { screen:[90,130], power:[550,265], security:[90,235], ports:[520,210] },
+  server: { screen:[140,95], power:[480,322], security:[140,190], ports:[520,210] },
+  tv: { screen:[75,120], power:[575,270], security:[75,230], ports:[520,210] },
 };
 
 export function inspectionDeviceSVG(device, observation, view = 'front') {
@@ -358,19 +358,26 @@ export function inspectionDeviceSVG(device, observation, view = 'front') {
 
 export function homeHeroSVG() {
   return `<svg aria-hidden="true" class="home-illustration" viewBox="0 0 640 390" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M65 86h102l25-26h300l63 35v118" stroke="var(--mat-line)" stroke-width="2" stroke-dasharray="5 9"/>
+    <circle cx="65" cy="86" r="5" fill="var(--accent)"/><circle cx="555" cy="213" r="5" fill="var(--accent)"/>
     <ellipse cx="320" cy="338" rx="282" ry="35" fill="var(--art-shadow)"/>
     <path d="M52 120l335-79 204 119-334 98z" fill="var(--wall)" stroke="var(--machine-edge)" stroke-width="3"/>
     <path d="M52 120v158l204 102V258z" fill="var(--wall-base)" stroke="var(--machine-edge)" stroke-width="3"/>
     <path d="M256 258l335-98v155L256 380z" fill="var(--wood)" stroke="var(--machine-edge)" stroke-width="3"/>
+    <path d="M279 280l85-25v61l-85 25z" fill="var(--machine-side)" stroke="var(--machine-edge)" stroke-width="2"/><path d="M309 286l28-8" stroke="var(--paper)" stroke-width="5"/>
     <path d="M62 130l324-75 193 108-323 83z" fill="var(--wood-light)"/>
     <path d="M183 142l153-34 148 78-157 43z" fill="var(--bench-mat)" stroke="var(--mat-line)" stroke-width="2"/>
+    <g transform="translate(104 18)"><path d="M37 87V28M37 63Q5 60 10 37q25 0 27 26m0-17q28-2 25-26-24 4-25 26" fill="var(--leaf)" stroke="var(--leaf-dark)" stroke-width="3"/><path d="M15 78h44l-7 34H22z" fill="var(--pot)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M22 85h30" stroke="var(--paper)" stroke-width="2"/></g>
     <g transform="translate(169 15) scale(.55)">${inspectionDeviceSVG('laptop',{screen:'NO SIGNAL',cue:'loose'}).replace('<svg class="exam-device-svg" aria-hidden="true" viewBox="0 0 640 400"','<svg x="0" y="0" width="640" height="400" viewBox="0 0 640 400"')}</g>
     <path d="M168 190q-61 20-60 51t83 21" stroke="var(--shirt-blue)" stroke-width="7"/><path d="M190 254l20 9-12 17-22-12z" fill="var(--machine-shell)" stroke="var(--machine-edge)" stroke-width="3"/>
     <path d="M475 127l28-8 25 68-28 8z" fill="var(--shirt-red)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M509 194l10 28" stroke="var(--machine-edge)" stroke-width="6"/>
     <path d="M120 148l28 14-11 35-29-14z" fill="var(--paper)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M146 169q19 5 8 18l-13-3" stroke="var(--machine-edge)" stroke-width="3"/>
     <path d="M387 272l115-34v45l-115 35z" fill="var(--paper)" stroke="var(--machine-edge)" stroke-width="2"/>
     <text x="405" y="286" transform="rotate(-16 405 286)" fill="var(--art-ink)" font-size="14" font-family="var(--font-display)">DEVICE CARE</text>
-    <circle cx="510" cy="57" r="31" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/><path d="M498 57h24m-12-12v24" stroke="var(--accent)" stroke-width="7"/>
+    <g class="home-signal"><path d="M448 20h139a12 12 0 0 1 12 12v51a12 12 0 0 1-12 12h-80l-18 17V95h-41a12 12 0 0 1-12-12V32a12 12 0 0 1 12-12z" fill="var(--surface)" stroke="var(--accent)" stroke-width="3"/>
+      <circle cx="459" cy="43" r="6" fill="var(--warn)"/><text x="474" y="48" font-size="13" font-family="var(--font-mono)" font-weight="700" fill="var(--ink)">CASE #001</text><text x="453" y="74" font-size="13" font-family="var(--font-body)" fill="var(--muted)">Definitely plugged in?</text></g>
+    <path d="M406 183l32-9 17 43-32 10z" fill="var(--machine-shell)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M412 186l22-6 11 28-22 6z" fill="var(--display-bg)"/><path d="M424 191l8 7m-10 0 10-8" stroke="var(--display-text)" stroke-width="2"/>
     <path d="M103 79l10-10m-26 23 7-7M545 286l13 4m-21 9 8 8" stroke="var(--accent)" stroke-width="3"/>
   </svg>`;
 }
+
