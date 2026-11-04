@@ -54,3 +54,22 @@ test('home and workbench preserve unique document IDs and main.js parses', () =>
   const withoutImports = source.replace(/^import[\s\S]*?;\n/gm, '');
   assert.doesNotThrow(() => new Function(withoutImports));
 });
+
+
+test('unpowered hardware has a dark screen and no active status UI',()=>{
+  for(const repair of REPAIRS){
+    const model=inspectionFor({...repair,stage:0});
+    if(model.screen!=='NO POWER') continue;
+    assert.equal(model.physical.powered,false);
+    const front=inspectionDeviceSVG(repair.device,model,'front');
+    assert.doesNotMatch(front,/>NO POWER<|fill="var\(--good\)"|fill="var\(--display-text\)"/);
+    assert.match(model.physical.description,/Screen off/);
+  }
+});
+test('laptop and server connections retain their physical device identities',()=>{
+  const laptop=inspectionFor({...REPAIRS[0],stage:0});
+  assert.equal(laptop.physical.connector,'usb-c');
+  const powerServer=REPAIRS.find(r=>r.device==='server' && /power lead/i.test(r.text));
+  assert.ok(powerServer);
+  assert.equal(inspectionFor({...powerServer,stage:0}).physical.connector,'power');
+});

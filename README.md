@@ -73,6 +73,26 @@ the system's reduced-motion preference.
 The scenarios teach the best next action for stated evidence, not a universal
 fix for every similar symptom. See the [case accuracy audit](docs/case-audit.md).
 
+## Cyber lab
+
+Open **Cyber lab** from Home or Pause for six untimed investigations: phishing,
+MFA fatigue, unknown USB devices, ransomware containment, accidental sharing,
+and verified security updates. Inspect evidence before choosing a response.
+Each choice explains its consequence; unsafe choices allow another attempt.
+Completed cases and safe first decisions are saved in this browser.
+
+The lab is separate from shift scoring and never resumes a paused shift. All
+messages, links and devices are fictional, inert training material.
+See [training sources and verification](docs/security-training.md).
+
+![Cyber lab phishing investigation, captured from the running game](docs/security-desk-dark.jpg)
+
+Device inspections now show distinct physical fronts and backs. The laptop has
+a rear lid, hinges and side ports; unpowered hardware has no lit screen or
+active power indicator. Reconnecting power updates the carried device too.
+
+![Laptop rear lid and disconnected side charger](docs/laptop-connections-dark.jpg)
+
 ## Running locally
 
 Plain HTML/CSS/JavaScript ES modules. No build step or dependencies:
@@ -96,6 +116,8 @@ untimed practice controller is separate. The original engine file is unchanged.
 | src/main.js | Rendering, input, animation, and session integration |
 | src/tickets.js | Authored complaints, existing fix IDs, and repair sequences |
 | src/inspection.js | Read-only component findings for every repair stage |
+| src/security.js | Six defensive investigations and browser-local progress model |
+| src/security-ui.js | Cyber lab dialog, evidence, feedback, and keyboard focus |
 | src/challenges.js | Diagnosis levels, evidence presentation, and saved-level migration |
 | src/icons.js | Original inline SVG corporate office, coworkers, devices, and workbench art |
 | src/styles.css | Layout, themes, and animation |

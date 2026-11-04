@@ -90,6 +90,11 @@ export function inspectionFor(ticket) {
   return {
     ...current,
     device: ticket.device,
+    physical: {
+      powered: current.screen !== 'NO POWER',
+      connector: ticket.device === 'laptop' ? 'usb-c' : ticket.device === 'phone' ? 'wireless' : ticket.device === 'server' && index === 9 ? 'power' : ticket.device === 'server' ? 'network' : ticket.device === 'printer' ? 'usb-b' : 'display',
+      description: current.screen === 'NO POWER' ? 'Screen off · power indicator off' : current.cue === 'loose' ? 'Power on · connection needs inspection' : 'Power on · inspect the reported status',
+    },
     zones: INSPECTION_ZONES.map(zone => ({
       ...zone, ...actions[zone.id],
       ...(ticket.device === 'phone' && zone.id === 'ports' ? { label: 'Enable wireless radios' } : {}),
