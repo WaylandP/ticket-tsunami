@@ -178,94 +178,79 @@ const HEAD_HAIR = [
 
 /** Deterministic silhouettes and accessories; device stays supported in every pose. */
 export function personSVG(name, device) {
-  const h = hashName(name);
-  const ceo = name === 'The CEO', gary = name.startsWith('Gary'), jules = name === 'Jules the intern', frank = name === 'Frank, remote';
-  const skin = ceo ? AV_SKIN[1] : gary ? AV_SKIN[0] : jules ? AV_SKIN[2] : frank ? AV_SKIN[3] : AV_SKIN[h % 4];
-  const hair = HEAD_HAIR[gary ? 5 : frank || ceo ? 0 : (h >>> 2) % 6](AV_HAIR[(h >>> 4) % 5]);
+  const h = hashName(name), ceo = name === 'The CEO', gary = name.startsWith('Gary'), jules = name === 'Jules the intern', frank = name === 'Frank, remote';
+  const skin = AV_SKIN[h % 4], hairColor = AV_HAIR[(h >>> 4) % 5];
   const shirt = ceo ? 'var(--art-ink)' : SHIRTS[(h >>> 6) % SHIRTS.length];
-  const broad = h % 3 === 0 ? 5 : 0;
-  const glasses = ceo || h % 4 === 0;
-  const deviceArt = (DEVICE_ART[device] || DEVICE_ART.laptop).replace(
-    '<svg aria-hidden="true" viewBox="0 0 48 48">',
-    '<svg viewBox="0 0 48 48" x="20" y="67" width="45" height="45">');
-  return `<svg aria-hidden="true" viewBox="0 0 88 146" class="person" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="44" cy="140" rx="30" ry="4" fill="var(--art-shadow)"/>
+  const wide = h % 3 === 0 ? 7 : 0, longHair = (h >>> 2) % 6 === 4;
+  const deviceArt = (DEVICE_ART[device] || DEVICE_ART.laptop).replace('<svg aria-hidden="true" viewBox="0 0 48 48">', '<svg x="40" y="118" width="80" height="80" viewBox="0 0 48 48">');
+  return `<svg aria-hidden="true" viewBox="0 0 160 250" class="person" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="80" cy="239" rx="51" ry="8" fill="var(--art-shadow)"/>
     <g class="person-body">
-      <g class="leg"><path d="M33 105v26" stroke="var(--trousers)" stroke-width="12"/><path d="M27 132h11" stroke="var(--art-ink)" stroke-width="8"/></g>
-      <g class="tap-foot"><path d="M52 105v26" stroke="var(--trousers)" stroke-width="12"/><path d="M49 132h13" stroke="var(--art-ink)" stroke-width="8"/></g>
-      <path d="M${24-broad} 67q18-13 ${36+2*broad} 0l5 42q-23 8-${46+2*broad} 0z" fill="${shirt}" stroke="var(--art-ink)" stroke-width="2"/>
-      <path d="M38 53v10q4 5 9 0V53" fill="${skin}" stroke="var(--art-ink)" stroke-width="2"/>
-      ${ceo ? '<path d="M32 62l10 10 12-10-5 25H36z" fill="var(--paper)"/><path d="M42 69l-4 6 4 12 4-12z" fill="var(--shirt-red)"/>' : '<path d="M33 63l9 18 11-18" stroke="var(--paper)" stroke-width="2"/><rect x="37" y="78" width="11" height="13" rx="2" fill="var(--paper)" stroke="var(--art-ink)" stroke-width="1.5"/><path d="M40 83h5m-5 3h3" stroke="var(--shirt-blue)" stroke-width="1.5"/>'}
+      <g class="leg"><path d="M64 175l-3 47" stroke="var(--art-ink)" stroke-width="21"/><path d="M63 178l-3 41" stroke="var(--trousers)" stroke-width="15"/><path d="M61 220l-16 9q-5 8 4 8h26v-16" fill="var(--art-ink)"/><path d="M44 234h31" stroke="var(--paper)" stroke-width="3"/></g>
+      <g class="tap-foot"><path d="M94 175l4 47" stroke="var(--art-ink)" stroke-width="21"/><path d="M94 178l4 41" stroke="var(--trousers)" stroke-width="15"/><path d="M99 220l17 9q5 8-4 8H86v-16" fill="var(--art-ink)"/><path d="M87 234h31" stroke="var(--paper)" stroke-width="3"/></g>
+      ${longHair ? `<path d="M49 67v51q30 16 65-3V66z" fill="${hairColor}"/>` : ''}
+      <path d="M${49-wide} 104q30-23 ${60+wide*2} 0l9 74q-39 15-${78+wide*2} 0z" fill="${shirt}" stroke="var(--art-ink)" stroke-width="2.5"/>
+      <path d="M67 84v18q13 13 26-1V84" fill="${skin}" stroke="var(--art-ink)" stroke-width="2.5"/>
+      ${ceo ? '<path d="M58 101l22 19 22-19-9 48H68z" fill="var(--paper)"/><path d="M80 115l-7 9 7 24 7-24z" fill="var(--shirt-red)"/><path d="M52 104l12 25-16 13m60-38-12 25 16 13" stroke="var(--paper)" stroke-width="2"/>' : `<path d="M59 101l21 33 22-33" stroke="var(--paper)" stroke-width="3"/><rect x="70" y="130" width="20" height="25" rx="4" fill="var(--paper)" stroke="var(--art-ink)" stroke-width="2"/><circle cx="80" cy="138" r="4" fill="${shirt}"/><path d="M75 147h10" stroke="var(--art-ink)" stroke-width="2"/>`}
       <g class="head">
-        <circle cx="27" cy="40" r="4" fill="${skin}"/><circle cx="58" cy="40" r="4" fill="${skin}"/>
-        <rect x="27" y="21" width="31" height="36" rx="14" fill="${skin}" stroke="var(--art-ink)" stroke-width="2"/>
-        ${hair}
-        <g class="eyes" fill="var(--art-ink)"><circle cx="36" cy="39" r="2"/><circle cx="49" cy="39" r="2"/></g>
-        <path class="smile" d="M37 48q6 5 11-1" stroke="var(--art-ink)" stroke-width="2"/>
-        <path class="frown" d="M37 50q5-4 11 0" stroke="var(--art-ink)" stroke-width="2"/>
-        <path d="M43 41l-1 4h3" stroke="var(--art-ink)" stroke-width="1.3" opacity=".4"/>
-        ${glasses ? `<g stroke="var(--art-ink)" stroke-width="2" fill="${ceo ? 'var(--art-ink)' : 'none'}"><rect x="30" y="35" width="11" height="8" rx="3"/><rect x="45" y="35" width="11" height="8" rx="3"/><path d="M41 38h4"/></g>` : ''}
-        ${ceo ? '<path d="M29 23l-2-12 10 5 6-10 6 10 10-5-2 12z" fill="var(--face)" stroke="var(--art-ink)" stroke-width="2"/>' : ''}
-        ${gary ? '<path d="M32 36h8m5 0h8M33 43h6m7 0h6" stroke="var(--art-ink)" stroke-width="1.6" opacity=".65"/>' : ''}
-        ${jules || frank ? `<path d="M25 37V31a18 18 0 0 1 36 0v8" stroke="var(--art-ink)" stroke-width="4"/><rect x="21" y="34" width="8" height="13" rx="4" fill="var(--shirt-blue)" stroke="var(--art-ink)" stroke-width="2"/><rect x="56" y="34" width="8" height="13" rx="4" fill="var(--shirt-blue)" stroke="var(--art-ink)" stroke-width="2"/>${frank ? '<path d="M61 45q0 10-12 9" stroke="var(--art-ink)" stroke-width="2"/><circle cx="48" cy="54" r="3" fill="var(--art-ink)"/>' : ''}` : ''}
+        <ellipse cx="53" cy="64" rx="7" ry="10" fill="${skin}" stroke="var(--art-ink)" stroke-width="2"/><ellipse cx="107" cy="64" rx="7" ry="10" fill="${skin}" stroke="var(--art-ink)" stroke-width="2"/>
+        <path d="M54 51q0-27 26-27t26 27v20q-1 24-26 27-25-3-26-27z" fill="${skin}" stroke="var(--art-ink)" stroke-width="2.5"/>
+        <g transform="translate(10 -5) scale(1.65)">${HEAD_HAIR[gary ? 5 : ceo || frank ? 0 : (h >>> 2) % 6](hairColor)}</g>
+        <path d="M62 56q6-4 12-1m12 0q7-3 12 1" stroke="${hairColor}" stroke-width="3"/>
+        <g class="eyes" fill="var(--art-ink)"><ellipse cx="69" cy="65" rx="2.7" ry="3.6"/><ellipse cx="92" cy="65" rx="2.7" ry="3.6"/></g>
+        <path d="M80 66l-2 10h5" stroke="var(--art-ink)" stroke-width="2" opacity=".5"/>
+        <ellipse cx="63" cy="76" rx="6" ry="3" fill="var(--shirt-red)" opacity=".3"/><ellipse cx="99" cy="76" rx="6" ry="3" fill="var(--shirt-red)" opacity=".3"/>
+        <path class="smile" d="M72 83q8 6 17-1" stroke="var(--art-ink)" stroke-width="2.5"/><path class="frown" d="M72 86q9-6 17-1" stroke="var(--art-ink)" stroke-width="2.5"/>
+        ${h % 7 === 0 && !jules ? `<path d="M59 78q7 18 21 18t22-18l-6 6q-16 11-31-1z" fill="${hairColor}"/><path d="M70 79q10-5 20 0" stroke="${hairColor}" stroke-width="3"/>` : ''}
+        ${ceo || h % 4 === 0 ? `<g stroke="var(--art-ink)" stroke-width="3" fill="${ceo ? 'var(--art-ink)' : 'none'}"><rect x="58" y="59" width="20" height="14" rx="5"/><rect x="83" y="59" width="20" height="14" rx="5"/><path d="M78 64h5m-29-2h4m45 0h5"/></g>` : ''}
+        ${ceo ? '<path d="M57 33l-5-21 18 9L80 5l11 16 18-9-5 21z" fill="var(--face)" stroke="var(--art-ink)" stroke-width="2.5"/>' : ''}
+        ${gary ? '<path d="M62 71h13m10 0h13" stroke="var(--art-ink)" stroke-width="2" opacity=".5"/>' : ''}
+        ${jules || frank ? `<path d="M49 62V50a31 31 0 0 1 62 0v13" stroke="var(--art-ink)" stroke-width="6"/><rect x="44" y="58" width="13" height="23" rx="6" fill="var(--shirt-blue)" stroke="var(--art-ink)" stroke-width="2"/><rect x="104" y="58" width="13" height="23" rx="6" fill="var(--shirt-blue)" stroke="var(--art-ink)" stroke-width="2"/>${frank ? '<path d="M111 80q0 16-23 11" stroke="var(--art-ink)" stroke-width="3"/><rect x="83" y="87" width="11" height="7" rx="3" fill="var(--art-ink)"/>' : ''}` : ''}
       </g>
-      <path d="M24 73q-12 22 8 28M62 73q12 22-9 28" stroke="var(--art-ink)" stroke-width="10"/>
-      <path d="M24 73q-12 22 8 28M62 73q12 22-9 28" stroke="${skin}" stroke-width="7"/>
+      <path d="M49 116q-20 28 5 53M111 116q20 28-6 53" stroke="var(--art-ink)" stroke-width="17"/><path d="M49 116q-20 28 5 53M111 116q20 28-6 53" stroke="${skin}" stroke-width="12"/>
+      <path d="M48 107q-11 9-15 24l18 7 10-26M112 107q11 9 15 24l-18 7-10-26" fill="${shirt}" stroke="var(--art-ink)" stroke-width="2.5"/>
       <g class="held-device">${deviceArt}</g>
-      <g class="holding-hands" fill="${skin}" stroke="var(--art-ink)" stroke-width="1.5"><rect x="27" y="98" width="10" height="6" rx="3"/><rect x="50" y="98" width="10" height="6" rx="3"/></g>
-      <g class="crossed-arms" stroke="var(--art-ink)" stroke-width="9"><path d="M23 89l33 14M62 89l-31 14"/><path d="M23 89l33 14M62 89l-31 14" stroke="${skin}" stroke-width="6"/></g>
-      ${gary || h % 5 === 0 ? '<g transform="translate(62 105)"><path d="M10 2h3q6 5 0 8h-3" stroke="var(--art-ink)" stroke-width="2"/><rect width="11" height="14" rx="3" fill="var(--paper)" stroke="var(--art-ink)" stroke-width="2"/><path d="M3 5h5" stroke="var(--shirt-red)" stroke-width="2"/></g>' : ''}
+      <g class="holding-hands" fill="${skin}" stroke="var(--art-ink)" stroke-width="2"><path d="M47 174q-4-7 3-10l10 1q5 6-1 11z"/><path d="M103 164l10-1q7 4 2 11l-12 2q-5-6 0-12z"/></g>
+      <g class="crossed-arms" fill="${skin}" stroke="var(--art-ink)" stroke-width="2"><path d="M45 169q-2-8 6-8l14 5-4 10z"/><path d="M97 166l16-5q8 1 3 10l-14 5z"/></g>
+      ${gary || h % 5 === 0 ? '<g transform="translate(117 167)"><path d="M14 3h5q9 9-2 13h-4" stroke="var(--art-ink)" stroke-width="3"/><rect width="16" height="22" rx="4" fill="var(--paper)" stroke="var(--art-ink)" stroke-width="2"/><path d="M4 9h7" stroke="var(--accent)" stroke-width="2"/></g>' : ''}
     </g>
-    <g class="patience-steam" stroke="var(--muted)" stroke-width="2.5"><path d="M15 29q-7-5 0-10t0-10"/><path d="M71 29q7-5 0-10t0-10"/></g>
-    <g class="celebrate" stroke="var(--good)" stroke-width="3"><path d="M9 52l-5-4m74 4 5-4M15 12l-3-5m59 5 3-5"/><path d="M67 70l4 4 8-10"/></g>
+    <g class="patience-steam" stroke="var(--muted)" stroke-width="3"><path d="M31 51q-10-10 0-20t0-17M129 51q10-10 0-20t0-17"/></g>
+    <g class="celebrate" stroke="var(--good)" stroke-width="4"><path d="M22 80l-9-7m125 7 9-7M36 18l-7-8m95 8 7-8M122 111l8 8 15-20"/></g>
   </svg>`;
 }
 
-// The room is decorative, repeatable SVG: no IDs, external assets or paint servers.
 export function roomSVG() {
-  return `<div class="room-wall">
-    <div class="room-brand"><span class="room-cross">✚</span><span>DEVICE CARE<small>TECH SUPPORT · WALK-INS WELCOME</small></span></div>
-    <svg class="room-window" viewBox="0 0 180 106" fill="none" stroke="var(--art-ink)" stroke-width="3" stroke-linejoin="round">
-      <rect x="4" y="4" width="172" height="92" rx="9" fill="var(--sky)"/>
-      <circle class="window-sun" cx="133" cy="28" r="12" fill="var(--sun)" stroke="none"/>
-      <path class="window-moon" d="M140 16a15 15 0 1 0 14 23 15 15 0 0 1-14-23" fill="var(--paper)" stroke="none"/>
-      <path class="window-stars" d="M28 20v8m-4-4h8m64-8v6m-3-3h6" stroke="var(--paper)" stroke-width="2"/>
-      <path d="M14 43h32m-16-5h26M98 50h30" stroke="var(--paper)" stroke-width="6" stroke-linecap="round" opacity=".65"/>
-      <path d="M6 77l25-14 18 10 24-21 21 16 19-8 27 13 34-18v40H6z" fill="var(--distant)" stroke="none"/>
-      <path d="M6 87l45-10 27 8 41-8 55 5v13H6z" fill="var(--leaf)" stroke="none"/>
-      <path d="M90 5v90M5 60h170" stroke="var(--paper)" stroke-width="6"/>
-      <rect x="1" y="95" width="178" height="8" rx="3" fill="var(--wood-light)"/>
-    </svg>
-    <svg class="wall-clock" viewBox="0 0 70 70" fill="none" stroke="var(--art-ink)" stroke-linecap="round">
-      <circle cx="35" cy="36" r="30" fill="var(--wood)" stroke-width="2"/><circle cx="35" cy="33" r="28" fill="var(--paper)" stroke-width="2.5"/>
-      <path d="M35 11v3m22 19h-3M35 55v-3M13 33h3" stroke-width="2"/>
-      <path class="clock-hour" d="M35 33V19" stroke-width="3"/><path class="clock-minute" d="M35 33V13" stroke-width="2"/><circle cx="35" cy="33" r="3" fill="var(--shirt-red)" stroke="none"/>
-    </svg>
-    <div class="room-poster"><span>HAVE YOU TRIED</span><strong>TURNING IT<br>OFF AND ON?</strong><small>A fresh start for everyone.</small></div>
-    <svg class="room-shelf" viewBox="0 0 140 100" fill="none" stroke="var(--art-ink)" stroke-width="2.5" stroke-linejoin="round">
-      <path d="M10 84h120v8H10z" fill="var(--wood-light)"/><path d="M20 93v6m100-6v6"/>
-      <rect x="17" y="43" width="13" height="40" rx="2" fill="var(--shirt-blue)"/><rect x="31" y="36" width="14" height="47" rx="2" fill="var(--shirt-red)"/><path d="M47 43l12-3 10 40-12 3z" fill="var(--face)"/><path d="M21 53h5m9-6h6" stroke="var(--paper)"/>
-      <path d="M98 62V30m0 21Q72 53 77 33q21 1 21 18m0-11q22 3 21-19-18 1-21 19m0-8Q82 27 90 14q12 6 8 18" fill="var(--leaf)" stroke="var(--leaf-dark)"/>
-      <path d="M82 60h32l-4 23H86z" fill="var(--pot)"/>
-    </svg>
-  </div>
-  <svg class="room-furniture" viewBox="0 0 1000 250" preserveAspectRatio="xMidYMax meet" fill="none" stroke="var(--art-ink)" stroke-width="3" stroke-linejoin="round">
-    <g transform="translate(18 90)"><rect width="120" height="145" rx="7" fill="var(--wood)"/><path d="M6 49h108M6 96h108"/><path d="M48 23h24m-24 49h24m-24 48h24" stroke="var(--paper)" stroke-width="6"/><path d="M10 145v10m100-10v10"/>
-    <rect x="14" y="-26" width="85" height="25" rx="5" fill="var(--surface-2)"/><path d="M28-26v-21h56v21" fill="var(--paper)"/><circle cx="84" cy="-14" r="3" fill="var(--good)"/></g>
-    <g transform="translate(860 40)"><path d="M52 139V36m0 70Q-3 106 9 70q37 1 43 36m0-20q57-2 47-40-45 4-47 40m0-24Q11 61 24 25q29 8 28 37m0-16Q80 47 79 7q-26 6-27 39" fill="var(--leaf)" stroke="var(--leaf-dark)"/><path d="M18 135h69l-10 66H29z" fill="var(--pot)"/><path d="M17 135h71v12H17z" fill="var(--wood-light)"/></g>
+  return `<svg class="office-room" aria-hidden="true" viewBox="0 0 1440 740" preserveAspectRatio="xMidYMid slice" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 0h1440v740H0z" fill="var(--tile)"/>
+    <path d="M0 0h1440v300H0z" fill="var(--wall)"/>
+    <path d="M0 300h1440v18H0z" fill="var(--wall-base)"/><path d="M0 318h1440" stroke="var(--machine-edge)" stroke-width="3"/>
+    <path d="M0 740l570-422m-190 422 290-422m290 422-190-422m570 422L870 318M0 410h1440M0 550h1440" stroke="var(--mat-line)" stroke-width="2" opacity=".32"/>
+    <path d="M84 444h657l132 225H13z" fill="var(--bench-mat)" stroke="var(--mat-line)" stroke-width="3"/><path d="M101 462h620l108 187H37z" stroke="var(--surface)" stroke-width="2" opacity=".45"/>
+    <g stroke="var(--machine-edge)" stroke-width="3"><path d="M39 51h186v264H39z" fill="var(--machine-side)"/><path d="M50 61h164v247H50z" fill="var(--surface-2)"/><path d="M64 77h136v174H64z" fill="var(--sky)"/><path d="M73 82l117 150M80 81l116 148" stroke="var(--paper)" opacity=".45"/><path d="M194 188v34" stroke-width="6"/><path d="M60 270h144"/><rect x="91" y="113" width="85" height="31" rx="5" fill="var(--paper)"/><text x="133" y="134" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--art-ink)" stroke="none">WELCOME</text></g>
+    <g transform="translate(400 40)"><rect width="410" height="188" rx="18" fill="var(--machine-edge)"/><rect x="9" y="9" width="392" height="166" rx="11" fill="var(--sky)"/>
+      <circle class="window-sun" cx="323" cy="45" r="23" fill="var(--sun)"/><g class="window-stars" fill="var(--paper)"><circle cx="58" cy="37" r="2"/><circle cx="148" cy="54" r="3"/><circle cx="246" cy="30" r="2"/></g><path class="window-moon" d="M330 22a24 24 0 1 0 23 35 22 22 0 0 1-23-35" fill="var(--paper)"/>
+      <path d="M10 150V113h36V92h36v58h25V103h55v47h25V84h40v66h29V98h65v52h32V76h37v74z" fill="var(--distant)"/><path d="M10 150h390v25H10z" fill="var(--leaf-dark)" opacity=".5"/><path d="M142 9v166m128-166v166M9 98h392" stroke="var(--machine-edge)" stroke-width="7"/><rect x="-12" y="178" width="434" height="13" rx="5" fill="var(--wood-light)" stroke="var(--machine-edge)" stroke-width="3"/>
+    </g>
+    <g transform="translate(262 64)" stroke="var(--machine-edge)" stroke-width="3"><rect width="96" height="134" rx="5" fill="var(--surface)"/><path d="M25 37h46m-23-23v46" stroke="var(--accent)" stroke-width="12"/><text x="48" y="91" text-anchor="middle" font-family="var(--font-display)" font-size="12" stroke="none" fill="var(--ink)">STAY CURIOUS</text><path d="M21 107h54m-46 7h38" stroke="var(--muted)" stroke-width="2"/></g>
+    <g transform="translate(906 55)"><rect width="106" height="100" rx="8" fill="var(--surface)" stroke="var(--machine-edge)" stroke-width="3"/><svg x="18" y="4" width="70" height="70" viewBox="0 0 70 70"><circle cx="35" cy="33" r="28" fill="var(--surface-2)" stroke="var(--machine-edge)" stroke-width="3"/><path class="clock-hour" d="M35 33V18" stroke="var(--ink)" stroke-width="4"/><path class="clock-minute" d="M35 33V11" stroke="var(--accent)" stroke-width="3"/><circle cx="35" cy="33" r="4" fill="var(--ink)"/></svg><text x="53" y="88" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--ink)">ONE FIX AT A TIME</text></g>
+    <g transform="translate(1110 88)" stroke="var(--machine-edge)" stroke-width="3"><rect width="204" height="220" rx="12" fill="var(--machine-side)"/><rect x="12" y="14" width="180" height="190" rx="7" fill="var(--display-bg)"/>${[26,80,134].map(y=>`<rect x="24" y="${y}" width="156" height="42" rx="5" fill="var(--machine-edge)"/><path d="M36 ${y+13}h93m-93 8h93m-93 8h93" stroke="var(--display-line)" stroke-width="3"/><circle class="blink" cx="162" cy="${y+21}" r="5" fill="var(--display-text)" stroke="none"/>`).join('')}<path d="M22 220v12m160-12v12" stroke-width="9"/></g>
+    <g transform="translate(1320 190)" stroke="var(--leaf-dark)" stroke-width="4"><path d="M39 102V4m0 64Q-7 62 0 28q36 5 39 40m0-23q45-4 42-42-37 5-42 42m0 45q-44 4-45-24 33-4 45 24" fill="var(--leaf)"/><path d="M9 100h60l-9 60H18z" fill="var(--pot)" stroke="var(--machine-edge)"/></g>
+    <g transform="translate(849 252)" stroke="var(--machine-edge)" stroke-width="3"><path d="M0 0h201v50H0z" fill="var(--wood-light)"/><path d="M9 50v59m180-59v59" stroke-width="9"/><path d="M7 5h188" stroke="var(--paper)"/></g>
+    <path d="M271 237h555" stroke="var(--machine-edge)" stroke-width="6"/><path d="M300 240v14m490-14v14" stroke="var(--machine-edge)" stroke-width="5"/>
+    <g fill="var(--paper)" stroke="var(--machine-edge)" stroke-width="2"><path d="M289 200h16v36h-16z"/><path d="M306 194h17v42h-17z"/><path d="M325 203l15-4 10 34-15 4z"/></g>
   </svg>`;
 }
 
 export function deskSVG() {
-  return `<svg class="desk-art" viewBox="0 0 900 80" preserveAspectRatio="none" fill="none" stroke="var(--art-ink)" stroke-width="2.5" stroke-linejoin="round">
-    <path d="M30 26h840l25 26H5z" fill="var(--wood-light)"/><rect x="5" y="52" width="890" height="18" rx="5" fill="var(--wood)"/><path d="M40 70v10m820-10v10" stroke-width="12"/>
-    <path d="M365 29h170l13 13H352z" fill="var(--surface-2)"/><path d="M373 34h154m-145 4h136" stroke="var(--art-outline)" stroke-width="2" stroke-dasharray="5 3"/>
-    <ellipse cx="590" cy="37" rx="14" ry="8" fill="var(--surface)"/><path d="M590 30v5"/>
-    <path d="M93 8h9q15 13-1 18h-8" stroke-width="4"/><path d="M64 3h32v29q-16 9-32 0z" fill="var(--paper)"/><path d="M73 15h14m-7-7v14" stroke="var(--shirt-red)" stroke-width="4"/>
-    <path d="M734 30l48-5 4 14-48 5z" fill="var(--face)"/><path d="M746 34l25-3" stroke="var(--art-ink)" stroke-width="2"/>
+  return `<svg class="desk-art" aria-hidden="true" viewBox="0 0 900 180" preserveAspectRatio="none" fill="none" stroke="var(--machine-edge)" stroke-width="3" stroke-linejoin="round">
+    <path d="M65 25h770l57 82H8z" fill="var(--wood-light)"/><path d="M8 107h884v29H8z" fill="var(--wood)"/><path d="M50 137v43m800-43v43" stroke-width="18"/><path d="M65 32h770" stroke="var(--paper)" opacity=".65"/>
+    <path d="M378 0h142l19 49H359z" fill="var(--machine-side)"/><path d="M330 48h238l14 14H315z" fill="var(--machine-shell)"/>
+    <path d="M245 69h350l22 28H222z" fill="var(--machine-shell)"/><path d="M258 77h324m-330 8h337" stroke="var(--machine-edge)" stroke-width="4" stroke-dasharray="13 5"/><path d="M360 92h130" stroke="var(--machine-edge)" stroke-width="4"/>
+    <ellipse cx="671" cy="81" rx="39" ry="17" fill="var(--bench-mat)" stroke="var(--mat-line)"/><path d="M656 80q2-24 28-3l3 9q-16 10-31-1z" fill="var(--machine-shell)"/><path d="M672 70v8"/>
+    <path d="M120 38h44v41q-22 12-44 0z" fill="var(--surface)"/><path d="M166 47h9q22 22-10 25" stroke-width="5"/><path d="M132 55h20m-10-10v20" stroke="var(--accent)" stroke-width="4"/>
+    <path d="M741 56l49-7 11 27-49 7z" fill="var(--paper)"/><path d="M755 62l29-4m-26 12 20-3" stroke-width="2"/>
   </svg>`;
 }
-
 
 // --- close-up workbench art ---------------------------------------------------
 const artText = value => String(value).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
@@ -301,7 +286,14 @@ export function inspectionDeviceSVG(device, observation, view = 'front') {
   if (view === 'rear' && device === 'phone') {
     body = `<rect x="231" y="20" width="168" height="331" rx="27" fill="${front}" stroke="${edge}" stroke-width="4"/><rect x="244" y="34" width="52" height="72" rx="13" fill="${dark}" stroke="${edge}" stroke-width="2"/><circle cx="260" cy="53" r="9" fill="var(--display-bg)"/><circle cx="280" cy="81" r="9" fill="var(--display-bg)"/><circle cx="280" cy="52" r="4" fill="var(--paper)"/><path d="M285 316h60" stroke="${edge}" stroke-width="3"/><rect x="300" y="341" width="30" height="8" rx="3" fill="var(--display-bg)"/><path d="M263 335h17m70 0h17" stroke="${edge}" stroke-width="2" stroke-dasharray="2 3"/>`;
   } else if (view === 'rear') {
-    body = `<path d="M155 62h310l28 28v240H155z" fill="${dark}"/><rect x="125" y="62" width="340" height="268" rx="20" fill="${front}" stroke="${edge}" stroke-width="4"/>
+    const casing = device === 'printer'
+      ? `<path d="M188 110V32h228v78" fill="var(--paper)" stroke="${edge}" stroke-width="3"/><path d="M212 50h180m-180 15h180" stroke="var(--muted)" stroke-width="3"/><path d="M125 110l30-35h302l36 35v220H125z" fill="${dark}" stroke="${edge}" stroke-width="3"/><rect x="125" y="110" width="340" height="220" rx="16" fill="${front}" stroke="${edge}" stroke-width="4"/>`
+      : device === 'server'
+      ? `<path d="M140 24h325l28 27v310H140z" fill="${dark}" stroke="${edge}" stroke-width="3"/><rect x="125" y="24" width="340" height="337" rx="14" fill="${front}" stroke="${edge}" stroke-width="4"/><path d="M150 35h290m-290 313h290" stroke="${dark}" stroke-width="7"/>`
+      : device === 'monitor' || device === 'tv'
+      ? `<path d="M275 300h62l17 47h-96z" fill="${dark}" stroke="${edge}" stroke-width="3"/><path d="M231 347h151l22 14H210z" fill="${front}" stroke="${edge}" stroke-width="3"/><rect x="${device==='tv'?80:110}" y="48" width="${device==='tv'?440:380}" height="272" rx="17" fill="${dark}" stroke="${edge}" stroke-width="4"/><rect x="125" y="62" width="340" height="249" rx="20" fill="${front}" stroke="${edge}" stroke-width="3"/>`
+      : `<path d="M155 62h310l28 28v240H155z" fill="${dark}"/><rect x="125" y="62" width="340" height="268" rx="20" fill="${front}" stroke="${edge}" stroke-width="4"/><path d="M165 215h238v29H165z" fill="${dark}" stroke="${edge}" stroke-width="2"/><path d="M168 77h35m192 0h35m-262 237h35m192 0h35" stroke="${edge}" stroke-width="7"/>`;
+    body = `${casing}
       ${screws(145,82,300,226)}
       ${Array.from({length:9},(_,i)=>`<path d="M166 ${110+i*11}h128" stroke="${dark}" stroke-width="5"/>`).join('')}
       <rect x="326" y="104" width="100" height="70" rx="6" fill="var(--paper)"/><path d="M340 122h70m-70 12h47m-47 12h57" stroke="var(--art-ink)" stroke-width="3"/>
@@ -357,27 +349,17 @@ export function inspectionDeviceSVG(device, observation, view = 'front') {
 }
 
 export function homeHeroSVG() {
-  return `<svg aria-hidden="true" class="home-illustration" viewBox="0 0 640 390" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M65 86h102l25-26h300l63 35v118" stroke="var(--mat-line)" stroke-width="2" stroke-dasharray="5 9"/>
-    <circle cx="65" cy="86" r="5" fill="var(--accent)"/><circle cx="555" cy="213" r="5" fill="var(--accent)"/>
-    <ellipse cx="320" cy="338" rx="282" ry="35" fill="var(--art-shadow)"/>
-    <path d="M52 120l335-79 204 119-334 98z" fill="var(--wall)" stroke="var(--machine-edge)" stroke-width="3"/>
-    <path d="M52 120v158l204 102V258z" fill="var(--wall-base)" stroke="var(--machine-edge)" stroke-width="3"/>
-    <path d="M256 258l335-98v155L256 380z" fill="var(--wood)" stroke="var(--machine-edge)" stroke-width="3"/>
-    <path d="M279 280l85-25v61l-85 25z" fill="var(--machine-side)" stroke="var(--machine-edge)" stroke-width="2"/><path d="M309 286l28-8" stroke="var(--paper)" stroke-width="5"/>
-    <path d="M62 130l324-75 193 108-323 83z" fill="var(--wood-light)"/>
-    <path d="M183 142l153-34 148 78-157 43z" fill="var(--bench-mat)" stroke="var(--mat-line)" stroke-width="2"/>
-    <g transform="translate(104 18)"><path d="M37 87V28M37 63Q5 60 10 37q25 0 27 26m0-17q28-2 25-26-24 4-25 26" fill="var(--leaf)" stroke="var(--leaf-dark)" stroke-width="3"/><path d="M15 78h44l-7 34H22z" fill="var(--pot)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M22 85h30" stroke="var(--paper)" stroke-width="2"/></g>
-    <g transform="translate(169 15) scale(.55)">${inspectionDeviceSVG('laptop',{screen:'NO SIGNAL',cue:'loose'}).replace('<svg class="exam-device-svg" aria-hidden="true" viewBox="0 0 640 400"','<svg x="0" y="0" width="640" height="400" viewBox="0 0 640 400"')}</g>
-    <path d="M168 190q-61 20-60 51t83 21" stroke="var(--shirt-blue)" stroke-width="7"/><path d="M190 254l20 9-12 17-22-12z" fill="var(--machine-shell)" stroke="var(--machine-edge)" stroke-width="3"/>
-    <path d="M475 127l28-8 25 68-28 8z" fill="var(--shirt-red)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M509 194l10 28" stroke="var(--machine-edge)" stroke-width="6"/>
-    <path d="M120 148l28 14-11 35-29-14z" fill="var(--paper)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M146 169q19 5 8 18l-13-3" stroke="var(--machine-edge)" stroke-width="3"/>
-    <path d="M387 272l115-34v45l-115 35z" fill="var(--paper)" stroke="var(--machine-edge)" stroke-width="2"/>
-    <text x="405" y="286" transform="rotate(-16 405 286)" fill="var(--art-ink)" font-size="14" font-family="var(--font-display)">DEVICE CARE</text>
-    <g class="home-signal"><path d="M448 20h139a12 12 0 0 1 12 12v51a12 12 0 0 1-12 12h-80l-18 17V95h-41a12 12 0 0 1-12-12V32a12 12 0 0 1 12-12z" fill="var(--surface)" stroke="var(--accent)" stroke-width="3"/>
-      <circle cx="459" cy="43" r="6" fill="var(--warn)"/><text x="474" y="48" font-size="13" font-family="var(--font-mono)" font-weight="700" fill="var(--ink)">CASE #001</text><text x="453" y="74" font-size="13" font-family="var(--font-body)" fill="var(--muted)">Definitely plugged in?</text></g>
-    <path d="M406 183l32-9 17 43-32 10z" fill="var(--machine-shell)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M412 186l22-6 11 28-22 6z" fill="var(--display-bg)"/><path d="M424 191l8 7m-10 0 10-8" stroke="var(--display-text)" stroke-width="2"/>
-    <path d="M103 79l10-10m-26 23 7-7M545 286l13 4m-21 9 8 8" stroke="var(--accent)" stroke-width="3"/>
+  return `<svg class="home-illustration" aria-hidden="true" viewBox="0 0 700 430" fill="none" stroke-linejoin="round" stroke-linecap="round">
+    <ellipse cx="350" cy="389" rx="315" ry="28" fill="var(--art-shadow)"/>
+    <path d="M48 123L360 29l282 115v190L330 417 48 294z" fill="var(--wall-base)" stroke="var(--machine-edge)" stroke-width="3"/>
+    <path d="M48 123l312-94v200L48 321z" fill="var(--wall)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M360 29l282 115v197L360 229z" fill="var(--surface-2)" stroke="var(--machine-edge)" stroke-width="3"/>
+    <path d="M48 321l312-92 282 82-312 106z" fill="var(--tile)" stroke="var(--machine-edge)" stroke-width="3"/>
+    <path d="M83 132l221-67v111L83 243z" fill="var(--sky-day)" stroke="var(--machine-edge)" stroke-width="5"/><path d="M151 112v112m76-135v112" stroke="var(--machine-edge)" stroke-width="5"/><path d="M87 204l39-12v-27l25-8v49l43-13v-37l34-10v37l72-21" fill="var(--distant)"/>
+    <g transform="translate(370 56)"><svg width="125" height="196" viewBox="0 0 160 250">${personSVG('Jules the intern','laptop').replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'')}</svg></g>
+    <path d="M130 264l300-87 169 78-295 98z" fill="var(--wood-light)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M130 264v72l174 80v-63z" fill="var(--wood)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M304 353l295-98v73l-295 88z" fill="var(--machine-side)" stroke="var(--machine-edge)" stroke-width="3"/>
+    <path d="M191 196l120-31v92l-120 31z" fill="var(--machine-shell)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M199 202l104-27v73l-104 28z" fill="var(--display-bg)"/><path d="M249 272v22l-20 7 51-14-21 1v-18" fill="var(--machine-side)" stroke="var(--machine-edge)" stroke-width="3"/><path d="M217 216l64-17m-64 29 45-12m-45 24 58-16" stroke="var(--display-text)" stroke-width="4"/>
+    <path d="M233 305l92-26 27 14-93 28z" fill="var(--machine-shell)" stroke="var(--machine-edge)" stroke-width="2"/>
+    <path d="M463 317l79-26v30l-79 26z" fill="var(--paper)" stroke="var(--machine-edge)" stroke-width="2"/><text x="474" y="329" transform="rotate(-18 474 329)" font-family="var(--font-mono)" font-size="10" font-weight="700" fill="var(--art-ink)">DEVICE CARE</text>
+    <g transform="translate(546 158)"><path d="M0 47V0m0 30q-32-6-24-27 21 4 24 27m0-11q30-2 22-25Q2-1 0 19" fill="var(--leaf)" stroke="var(--leaf-dark)" stroke-width="3"/><path d="M-20 42h40l-5 28h-30z" fill="var(--pot)" stroke="var(--machine-edge)" stroke-width="3"/></g>
   </svg>`;
 }
-

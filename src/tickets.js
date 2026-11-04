@@ -1,78 +1,71 @@
 // Every ticket in the game. Each one has exactly one right fix.
 // Keep text under 90 characters and keep it readable by people who don't work in IT.
 
+// Each case supplies evidence for the best next action, not a universal diagnosis.
+// Access recovery always requires identity verification; updates use trusted channels.
 export const TICKETS = [
-  // Restart it
-  { fix: 'restart', text: 'My laptop has been "thinking" since Tuesday.' },
-  { fix: 'restart', text: 'The little loading wheel will not stop spinning.' },
-  { fix: 'restart', text: 'The video call froze on my face mid-sneeze. Please hurry.' },
-  { fix: 'restart', text: 'My mouse moves but nothing I click does anything.' },
-  { fix: 'restart', text: 'Laptop fan sounds like it is preparing for takeoff.' },
-  { fix: 'restart', text: 'Uptime says 94 days. Is that bad? It feels bad.' },
-  { fix: 'restart', text: 'The spreadsheet is "Not Responding" and honestly neither am I.' },
-  { fix: 'restart', text: 'My screen is frozen on a very unflattering slide.' },
-  { fix: 'restart', text: 'Everything is slow. I have 212 browser tabs open, unrelated.' },
-  { fix: 'restart', text: 'The printer shows a blinking light and a vague sense of dread.' },
-  { fix: 'restart', text: 'My headset says I’m in a call. I am not in a call.' },
-  { fix: 'restart', text: 'The cursor is gone. It was here this morning.' },
-  { fix: 'restart', text: 'Microphone stopped working right before I was going to talk.' },
-
-  // Reset password
-  { fix: 'password', text: 'I changed my password yesterday and forgot it overnight.' },
-  { fix: 'password', text: 'Locked out after trying my old password 11 times.' },
-  { fix: 'password', text: 'It says my password expired. I did not give it permission.' },
-  { fix: 'password', text: 'The sticky note with my password went through the wash.' },
-  { fix: 'password', text: 'I typed my password with caps lock on. Now I’m locked out.' },
-  { fix: 'password', text: 'Got a new phone and my login codes didn’t come with me.' },
-  { fix: 'password', text: 'My password was “Summer2026!” and now it’s fall.' },
-  { fix: 'password', text: 'Account locked. I may have let my kid “help.”' },
-  { fix: 'password', text: 'Back from vacation and my brain deleted my password.' },
-  { fix: 'password', text: 'Email login keeps saying “incorrect.” I am very correct.' },
-  { fix: 'password', text: 'I reset my password and the new one is also wrong somehow.' },
-  { fix: 'password', text: 'Can’t sign in. My cat walked across the keyboard 6 times.' },
-
-  // Check connection
-  { fix: 'connect', text: 'Internet is down. Also the cable is on the floor. Related?' },
-  { fix: 'connect', text: 'Wi-Fi shows one bar and a lot of attitude.' },
-  { fix: 'connect', text: 'Can’t reach any website. Airplane mode? What airplane?' },
-  { fix: 'connect', text: 'Monitor is black. It is plugged into the wall. Just the wall.' },
-  { fix: 'connect', text: 'My second screen vanished when I moved my coffee mug.' },
-  { fix: 'connect', text: 'Printer says “offline.” It is right next to me. Online.' },
-  { fix: 'connect', text: 'Video call keeps dropping since I moved to the patio.' },
-  { fix: 'connect', text: 'Keyboard stopped typing. The dongle may be in the vacuum.' },
-  { fix: 'connect', text: 'The VPN says connecting… connecting… connecting…' },
-  { fix: 'connect', text: 'Laptop is at 1% and the charger is in my car.' },
-  { fix: 'connect', text: 'Headphones play sound for everyone except me.' },
-  { fix: 'connect', text: 'I’m on the “Guest_Free_WiFi” from the coffee shop next door.' },
-
-  // Install updates
-  { fix: 'update', text: 'The app says it’s too old to open. It’s from 2019.' },
-  { fix: 'update', text: 'I’ve clicked “Remind me tomorrow” 47 days in a row.' },
-  { fix: 'update', text: 'Browser says “unsupported version.” Rude.' },
-  { fix: 'update', text: 'The meeting app won’t let me join until I update. Meeting is now.' },
-  { fix: 'update', text: 'A pop-up keeps begging me to update. Can it stop begging?' },
-  { fix: 'update', text: 'Security alert says my laptop is “critically out of date.”' },
-  { fix: 'update', text: 'New feature everyone is talking about doesn’t show up for me.' },
-  { fix: 'update', text: 'The chat app says my version is “no longer supported.”' },
-  { fix: 'update', text: 'Printer driver from a previous decade. Printer is sulking.' },
-  { fix: 'update', text: 'Phone says it needs an update before it will sync email.' },
-  { fix: 'update', text: 'Spreadsheet opens in “compatibility mode” and looks haunted.' },
-  { fix: 'update', text: 'My laptop’s OS is so old the wallpaper is a flip phone.' },
-
-  // Not an IT problem
-  { fix: 'notit', text: 'The office coffee machine is making sad noises.' },
-  { fix: 'notit', text: 'Can IT make the meeting at 4 PM go away?' },
-  { fix: 'notit', text: 'There is a bird in the break room. Please advise.' },
-  { fix: 'notit', text: 'My chair squeaks every time I lean back. Urgent.' },
-  { fix: 'notit', text: 'Who do I talk to about the thermostat war on floor 3?' },
-  { fix: 'notit', text: 'Can you make my boss reply to my email faster?' },
-  { fix: 'notit', text: 'The microwave says “Err.” Is that a virus?' },
-  { fix: 'notit', text: 'Someone ate my labeled yogurt. Can you check the logs?' },
-  { fix: 'notit', text: 'My parking badge doesn’t open the gate.' },
-  { fix: 'notit', text: 'Can you fix my fantasy football lineup? It’s for work.' },
-  { fix: 'notit', text: 'The vending machine ate my dollar and I want justice.' },
-  { fix: 'notit', text: 'Can IT approve my vacation days? It’s quicker than HR.' },
-  { fix: 'notit', text: 'My desk plant looks dehydrated. Is there an update for that?' },
+  { fix: "restart", text: "App is frozen. Work is saved; its support guide recommends a restart." },
+  { fix: "restart", text: "The app still hangs after closing it. A restart is approved; work is saved." },
+  { fix: "restart", text: "Call app is frozen. Network is healthy; the app recovery guide says restart." },
+  { fix: "restart", text: "Desktop is unresponsive. Files are saved; the approved next step is restart." },
+  { fix: "restart", text: "Update installed successfully. The system now explicitly requests a restart." },
+  { fix: "restart", text: "A known stuck service is confirmed. Its approved recovery step is a restart." },
+  { fix: "restart", text: "Spreadsheet app has hung. Recovery copy is saved; restart the affected app." },
+  { fix: "restart", text: "Display driver stopped responding. Its recovery guide calls for a restart." },
+  { fix: "restart", text: "A memory leak is confirmed. Work is saved; restart is the approved workaround." },
+  { fix: "restart", text: "Print service has stalled. Paper path is clear; restart the print service." },
+  { fix: "restart", text: "Headset service is stuck in a call. Its recovery guide recommends a restart." },
+  { fix: "restart", text: "The pointer service has hung. Work is saved; restart is the approved next step." },
+  { fix: "restart", text: "Audio service stopped responding. Its approved recovery step is restart." },
+  { fix: "password", text: "I forgot my password. My identity is verified and recovery is approved." },
+  { fix: "password", text: "Account is locked. Identity verified; the access-recovery workflow is approved." },
+  { fix: "password", text: "Legacy app expired my password. Identity verified; reset is approved." },
+  { fix: "password", text: "I lost my password. My identity is verified; use the approved recovery process." },
+  { fix: "password", text: "Sign-in is locked. Identity checks passed; approved account recovery is next." },
+  { fix: "password", text: "My login code device was lost. Identity verified; start approved MFA recovery." },
+  { fix: "password", text: "My password was exposed. Identity verified; replace it and revoke sessions." },
+  { fix: "password", text: "Account access is locked. Identity verified; recover access under our policy." },
+  { fix: "password", text: "Back from leave, password forgotten. Identity verified; recovery approved." },
+  { fix: "password", text: "Known-good account, forgotten password. Identity verified; recovery approved." },
+  { fix: "password", text: "Old credential is rejected. Identity verified; approved account recovery next." },
+  { fix: "password", text: "I lost my sign-in credentials. Identity verified; use approved recovery." },
+  { fix: "connect", text: "No internet. The network cable is unplugged and the link light is off." },
+  { fix: "connect", text: "Wi-Fi signal is weak. Move closer and check the approved network connection." },
+  { fix: "connect", text: "Airplane mode is on. Wireless radios are disabled; no sites can load." },
+  { fix: "connect", text: "Monitor has power but no signal. The display cable is not connected." },
+  { fix: "connect", text: "My second screen vanished. Its connector was pulled loose by my mug." },
+  { fix: "connect", text: "Printer is offline. Its network cable is disconnected; link light is off." },
+  { fix: "connect", text: "Calls drop on the patio. Signal is weak; check the approved network link." },
+  { fix: "connect", text: "Wireless keyboard is disconnected. Its paired receiver is unplugged." },
+  { fix: "connect", text: "VPN has no underlying network. The laptop is not connected to Wi-Fi." },
+  { fix: "connect", text: "Laptop battery is at 1%. Connect the approved charger; it is unplugged." },
+  { fix: "connect", text: "Headset is silent. Its audio plug is visibly disconnected." },
+  { fix: "connect", text: "Wrong network selected. Connect to the verified company network instead." },
+  { fix: "update", text: "The app reports an unsupported version. A verified update is available." },
+  { fix: "update", text: "Managed update console shows an approved security patch ready to install." },
+  { fix: "update", text: "Browser version is unsupported. The approved updater has the supported build." },
+  { fix: "update", text: "Meeting app requires a newer version. Verified update is ready." },
+  { fix: "update", text: "The trusted update console has an approved patch, not a browser pop-up." },
+  { fix: "update", text: "Management console confirms a missing security patch. Apply approved update." },
+  { fix: "update", text: "Required feature needs the newer app version. Approved update is available." },
+  { fix: "update", text: "Chat app version is unsupported. Install the verified supported release." },
+  { fix: "update", text: "Confirmed printer-driver bug. Approved driver update fixes this exact issue." },
+  { fix: "update", text: "Mail app requires a supported phone version. Verified update is available." },
+  { fix: "update", text: "File needs a newer supported app version. Approved update is ready." },
+  { fix: "update", text: "OS is below our supported baseline. Approved upgrade is ready and backed up." },
+  { fix: "notit", text: "The coffee machine pump is broken. Facilities owns appliance repairs here." },
+  { fix: "notit", text: "Can you cancel my meeting? Scheduling decisions belong to its organizer." },
+  { fix: "notit", text: "There is a bird in the break room. Route this to the building team." },
+  { fix: "notit", text: "My chair squeaks. Facilities handles furniture repairs here." },
+  { fix: "notit", text: "The thermostat is stuck. Building services owns this equipment here." },
+  { fix: "notit", text: "Can you make my manager reply faster? Please route my request to them." },
+  { fix: "notit", text: "Microwave displays an appliance fault. Facilities owns its servicing." },
+  { fix: "notit", text: "My labeled yogurt is missing. This belongs with the office manager." },
+  { fix: "notit", text: "Parking gate badge failed. Site security owns the gate and badge checks." },
+  { fix: "notit", text: "Can you fix my fantasy lineup? This is a personal request, not IT support." },
+  { fix: "notit", text: "Vending machine took my money. Route it to the vending service contact." },
+  { fix: "notit", text: "Can IT approve vacation? Only my manager and people team can approve it." },
+  { fix: "notit", text: "My desk plant needs water. The office plant-care team can help." },
 ];
 
 export const NAMES = [
@@ -82,19 +75,19 @@ export const NAMES = [
   'Carlos in Sales', 'Hannah from the 3rd floor', 'Ravi in Engineering', 'Zoe in Payroll',
 ];
 
-// Junk mail. The right answer is always "Not an IT problem", closing one pays
-// a bonus, and letting one rot costs nothing — recognizing them is the skill.
+// Suspicious mail. The UI names the existing notit action Route / report.
+// Report suspicious messages through the approved channel; never follow their links.
 export const SPAM = [
   { text: 'CONGRATS!!! You won a free tablet. Claim it in the next 10 minutes!!', from: 'Totally Legit Prizes' },
   { text: 'Your paycheck is ON HOLD. Verify your login at pay-roll-fix.example', from: 'Payroll “Support”' },
   { text: 'I am a prince with 94 laptops to give away. Reply with your password.', from: 'A Generous Stranger' },
   { text: 'FINAL NOTICE: your printer warranty expires TODAY. Act now!!!', from: 'Warranty Central' },
   { text: 'We noticed you own a computer. Click here to make it 600% faster.', from: 'speedy-pc-deals.example' },
-  { text: 'Exclusive webinar: Synergize Your Workflow. Only 9,999 seats left.', from: 'The Webinar People' },
+  { text: 'Required security webinar: enter your work password at training-check.example', from: 'The Webinar People' },
 ];
 
 // Regulars you get to know. Learn their habits and you can close their
-// tickets without reading them — that's the whole point.
+// familiar symptoms; still inspect the evidence before acting.
 export const REGULARS = [
   { name: 'Gary (it\u2019s always Gary)', fix: 'password' }, // locked out, every time
   { name: 'Frank, remote', fix: 'connect' }, // it's always the connection
@@ -104,18 +97,18 @@ export const REGULARS = [
 // Walk-in repairs: an end user carries the machine to your desk. Each one
 // takes two fixes, in order, like treating a patient — diagnose, then cure.
 export const REPAIRS = [
-  { device: 'laptop', text: 'Laptop won’t turn on. Smells faintly of toast.', stages: ['connect', 'restart'] },
-  { device: 'laptop', text: 'Laptop is on, but every key types the letter “j”.', stages: ['restart', 'update'] },
-  { device: 'printer', text: 'The printer ate 40 pages and is now making a grinding noise.', stages: ['restart', 'update'] },
-  { device: 'printer', text: 'Printer prints everything in a deep, unsettling pink.', stages: ['update', 'restart'] },
-  { device: 'phone', text: 'Work phone is locked. The last person who knew the code retired.', stages: ['password', 'restart'] },
+  { device: 'laptop', text: 'Laptop battery ran flat. The charger is unplugged; no heat or damage.', stages: ['connect', 'restart'] },
+  { device: 'laptop', text: 'Keyboard repeats letters. Hardware test passes; input service is stuck.', stages: ['restart', 'update'] },
+  { device: 'printer', text: 'Printer has no jam. Its print service is stuck and ignores controls.', stages: ['restart', 'update'] },
+  { device: 'printer', text: 'Printer self-test is fine. A confirmed driver bug makes jobs print pink.', stages: ['update', 'restart'] },
+  { device: 'phone', text: 'Work account is locked on this phone. Identity verified; recovery approved.', stages: ['password', 'restart'] },
   { device: 'phone', text: 'Phone insists it’s in airplane mode. It is not on an airplane.', stages: ['connect', 'restart'] },
-  { device: 'monitor', text: 'Monitor shows everything upside down. The user has adapted. Fix it anyway.', stages: ['connect', 'restart'] },
-  { device: 'monitor', text: 'Second monitor only works while someone holds the cable. His name is Greg.', stages: ['connect', 'update'] },
+  { device: 'monitor', text: 'Display loses signal. The dock cable is loose; hardware is undamaged.', stages: ['connect', 'restart'] },
+  { device: 'monitor', text: 'Display signal drops. A replacement cable is ready; driver fix is approved.', stages: ['connect', 'update'] },
   // The big jobs: three steps, big pay.
-  { device: 'server', text: 'The server room is beeping in a new, more urgent key.', stages: ['connect', 'restart', 'update'] },
-  { device: 'server', text: 'Someone unplugged the rack to charge a scooter.', stages: ['connect', 'restart', 'update'] },
-  { device: 'server', text: 'Rack is up, but the admin password expired mid-backup.', stages: ['password', 'restart', 'update'] },
-  { device: 'tv', text: 'The conference room TV shows static and, occasionally, a face.', stages: ['connect', 'restart', 'update'] },
-  { device: 'tv', text: 'The big-room TV only mirrors Dave\u2019s laptop. Dave left in March.', stages: ['connect', 'update', 'restart'] },
+  { device: 'server', text: 'Lab server link is down. No production traffic; maintenance is approved.', stages: ['connect', 'restart', 'update'] },
+  { device: 'server', text: 'Lab server power lead is unplugged. No active jobs; maintenance approved.', stages: ['connect', 'restart', 'update'] },
+  { device: 'server', text: 'Lab backup account is locked. Identity verified; no backup job is active.', stages: ['password', 'restart', 'update'] },
+  { device: 'tv', text: 'Room display has static. Video lead is loose; hardware checks passed.', stages: ['connect', 'restart', 'update'] },
+  { device: 'tv', text: 'Room receiver is paired to an old source. Authorized setup changes are ready.', stages: ['connect', 'update', 'restart'] },
 ];

@@ -4,61 +4,61 @@ import { REPAIRS } from './tickets.js';
 const stage = (zone, title, detail, screen, cue) => ({ zone, title, detail, screen, cue });
 const observations = [
   [
-    stage('ports', 'No charging light', 'The power plug is sitting beside the socket. The warm smell alone does not prove a failed battery.', 'NO POWER', 'loose'),
-    stage('power', 'Power has returned', 'The charging indicator is on, but the machine is still latched in its unresponsive state.', 'STANDBY', 'stalled'),
+    stage('ports', 'No charging light', 'Approved charger is disconnected. The battery is flat; inspection found no heat, swelling, liquid, or damage. Reconnect the charger.', 'NO POWER', 'loose'),
+    stage('power', 'Power has returned', 'Charge indicator is on. The approved recovery guide calls for a power cycle to clear the failed startup. There is no unsaved work.', 'STANDBY', 'stalled'),
   ],
   [
-    stage('power', 'Input is stuck', 'Every key produces the same letter. The screen and input controller are no longer responding normally.', 'jjjjjjjj', 'stalled'),
-    stage('screen', 'Input recovered', 'After the restart, the keyboard responds. The input driver reports an available maintenance update.', 'DRIVER OLD', 'update'),
+    stage('power', 'Input is stuck', 'Keyboard hardware tests pass. The input service repeats a buffered key; the approved recovery procedure calls for a restart. Work is saved.', 'jjjjjjjj', 'stalled'),
+    stage('screen', 'Input recovered', 'Keyboard responds after restart. The verified driver release fixes this confirmed input-service defect; install it through managed updates.', 'DRIVER OLD', 'update'),
   ],
   [
-    stage('power', 'Feed cycle stalled', 'The print mechanism is stuck in a repeating feed cycle. The control panel no longer accepts input.', 'FEED STUCK', 'stalled'),
-    stage('screen', 'Queue recovered', 'The feed cycle cleared. The print controller now reports outdated firmware.', 'FIRMWARE OLD', 'update'),
+    stage('power', 'Print service stalled', 'Paper path is clear and hardware tests pass. The print service is unresponsive; its approved recovery procedure is to restart it.', 'QUEUE STUCK', 'stalled'),
+    stage('screen', 'Queue recovered', 'Print service responds. The approved firmware release fixes this confirmed queue defect; the printer is idle and ready for maintenance.', 'FIRMWARE OLD', 'update'),
   ],
   [
-    stage('screen', 'Color driver mismatch', 'The test pattern is magenta. The controller identifies an outdated color driver.', 'COLOR ERROR', 'update'),
-    stage('power', 'Driver installed', 'The updated color driver is ready. The controller needs a fresh start to load it.', 'RESTART DUE', 'stalled'),
+    stage('screen', 'Color driver mismatch', 'Internal self-test colors are correct. Job output is magenta; diagnostics match the color-driver defect fixed by the approved release.', 'COLOR ERROR', 'update'),
+    stage('power', 'Driver installed', 'Verified driver is installed. Its installer explicitly requires a restart to load the new revision; all print jobs are saved.', 'RESTART DUE', 'stalled'),
   ],
   [
-    stage('security', 'Account lock', 'The lock screen reports that the previous credential is no longer valid. Check identity before resetting access.', 'ACCOUNT LOCK', 'locked'),
-    stage('power', 'Access restored', 'The replacement credential is accepted. The session is still using its old locked state.', 'SESSION STALE', 'stalled'),
+    stage('security', 'Account lock', 'The work account is locked, not the device PIN. Identity verification and recovery approval are complete. Use the approved access-recovery process.', 'ACCOUNT LOCK', 'locked'),
+    stage('power', 'Access restored', 'New account access is accepted. The managed mail app is unresponsive; its approved recovery procedure calls for a restart. Data is synced.', 'SESSION STALE', 'stalled'),
   ],
   [
     stage('ports', 'Radios disabled', 'The phone is powered on, but its wireless radios are disabled. There is no network link.', 'RADIOS OFF', 'offline'),
-    stage('power', 'Link restored', 'The radio indicator is back. The network service is still holding its disconnected session.', 'SESSION STALE', 'stalled'),
+    stage('power', 'Link restored', 'Radios are enabled and signal is stable. Network service is unresponsive; its recovery guide calls for a restart. Data is saved.', 'SESSION STALE', 'stalled'),
   ],
   [
-    stage('ports', 'Display path fault', 'The cable is seated loosely at the display adapter. The image orientation is wrong.', 'UPSIDE DOWN', 'loose'),
-    stage('power', 'Display link stable', 'The connection is stable. The display controller still holds the previous orientation.', 'RESET DISPLAY', 'stalled'),
+    stage('ports', 'Loose display connector', 'The dock video connector is loose. Its pins and cable are undamaged; reseat it to restore the video link.', 'NO SIGNAL', 'loose'),
+    stage('power', 'Display link stable', 'Video link is stable. The dock controller is unresponsive; its recovery guide calls for a power cycle. Work is saved.', 'RESTART DUE', 'stalled'),
   ],
   [
-    stage('ports', 'Intermittent connector', 'The signal drops when the plug moves. The connector is not seated securely.', 'NO SIGNAL', 'loose'),
-    stage('screen', 'Stable picture, old driver', 'The link stays on without holding the cable. The display adapter reports an outdated driver.', 'DRIVER OLD', 'update'),
+    stage('ports', 'Intermittent connector', 'The cable fails continuity testing. Disconnect it and fit the approved replacement; do not keep bending a faulty cable.', 'NO SIGNAL', 'loose'),
+    stage('screen', 'Stable picture, old driver', 'Replacement cable passes testing. Diagnostics also identify a known display-driver defect addressed by an approved update.', 'DRIVER OLD', 'update'),
   ],
   [
-    stage('ports', 'Link alarm', 'The rack alarm coincides with a disconnected network lead. The link indicator is dark.', 'LINK DOWN', 'loose'),
-    stage('power', 'Link restored, service stalled', 'The network lead is seated. The service remains unresponsive after the outage.', 'SERVICE STUCK', 'stalled'),
-    stage('screen', 'Service recovered', 'The service responds again. Its maintenance status shows a pending software update.', 'PATCH PENDING', 'update'),
+    stage('ports', 'Link alarm', 'The lab server network lead is disconnected and link indicator is dark. No production traffic is running; reconnect the undamaged lead.', 'LINK DOWN', 'loose'),
+    stage('power', 'Link restored, service stalled', 'Link is restored. The lab service is unresponsive; its approved runbook calls for a service restart. No active jobs will be interrupted.', 'SERVICE STUCK', 'stalled'),
+    stage('screen', 'Service recovered', 'Lab service responds. An approved patch fixes this known service defect; backups and rollback are ready for this maintenance window.', 'PATCH PENDING', 'update'),
   ],
   [
-    stage('ports', 'Power lead disconnected', 'A charging adapter occupies the outlet. The rack power connector has been pulled free.', 'NO POWER', 'loose'),
-    stage('power', 'Supply restored', 'Power is available again. The rack controller is waiting for a restart.', 'STANDBY', 'stalled'),
-    stage('screen', 'Rack online', 'The rack has started. Its maintenance panel reports a pending update.', 'PATCH PENDING', 'update'),
+    stage('ports', 'Power lead disconnected', 'The lab server power lead is disconnected. No active jobs or hardware damage; reconnect the approved supply under the maintenance procedure.', 'NO POWER', 'loose'),
+    stage('power', 'Supply restored', 'Power is restored. The lab controller is stuck after power loss; its approved recovery procedure calls for a power cycle. No jobs are active.', 'STANDBY', 'stalled'),
+    stage('screen', 'Rack online', 'Lab server has started. The approved firmware release addresses this startup fault; backup and rollback are ready.', 'PATCH PENDING', 'update'),
   ],
   [
-    stage('security', 'Expired administrator credential', 'The backup console is waiting at a credential prompt. Verify the authorized operator before resetting access.', 'CREDENTIAL OLD', 'locked'),
-    stage('power', 'Credential accepted', 'Access works again, but the backup service has not recovered from its interrupted session.', 'SERVICE STUCK', 'stalled'),
-    stage('screen', 'Backup service recovered', 'The service responds. The management console reports a pending maintenance update.', 'PATCH PENDING', 'update'),
+    stage('security', 'Verified account recovery', 'The lab backup account is locked. Operator identity and recovery approval are confirmed; use the approved access-recovery workflow.', 'ACCOUNT LOCK', 'locked'),
+    stage('power', 'Credential accepted', 'Account access works. The backup service remains unresponsive; the approved runbook calls for a service restart. No backup job is active.', 'SERVICE STUCK', 'stalled'),
+    stage('screen', 'Backup service recovered', 'Backup service responds. Its approved maintenance release fixes the known recovery defect. Backup and rollback are ready.', 'PATCH PENDING', 'update'),
   ],
   [
-    stage('ports', 'Unstable source signal', 'Static tracks an intermittent video connection. The occasional face belongs to a frozen frame.', 'NO SIGNAL', 'loose'),
-    stage('power', 'Source restored', 'The signal is stable, but the display is still holding a corrupted frame.', 'FRAME STUCK', 'stalled'),
-    stage('screen', 'Picture recovered', 'The picture has returned. The display firmware reports an available update.', 'FIRMWARE OLD', 'update'),
+    stage('ports', 'Unstable source signal', 'Video connection is loose; the last video frame is stuck behind the static. Reseat the undamaged lead and verify the source.', 'NO SIGNAL', 'loose'),
+    stage('power', 'Source restored', 'Signal is stable but the receiver is unresponsive. Its recovery guide calls for a power cycle; no presentation is active.', 'FRAME STUCK', 'stalled'),
+    stage('screen', 'Picture recovered', 'Picture is restored. The verified firmware release addresses this receiver fault and is approved for the idle display.', 'FIRMWARE OLD', 'update'),
   ],
   [
-    stage('ports', 'Wrong source connection', 'The receiver is still paired to an old presentation source. The active input needs reconnecting.', 'OLD SOURCE', 'offline'),
-    stage('screen', 'New source connected', 'The current source is selected. The receiver firmware is too old for a stable session.', 'FIRMWARE OLD', 'update'),
-    stage('power', 'Receiver updated', 'The receiver update is installed. A restart is needed before it can use the new software.', 'RESTART DUE', 'stalled'),
+    stage('ports', 'Wrong source connection', 'Receiver is still paired to the previous source. With setup authorized, disconnect the old source and connect the intended one.', 'OLD SOURCE', 'offline'),
+    stage('screen', 'New source connected', 'Intended source is connected. Its required protocol needs the approved newer receiver firmware; verify and install that release.', 'FIRMWARE OLD', 'update'),
+    stage('power', 'Receiver updated', 'The verified firmware is installed. The installer explicitly requires a restart to activate it; no presentation is in progress.', 'RESTART DUE', 'stalled'),
   ],
 ];
 
@@ -72,8 +72,8 @@ export const INSPECTION_ZONES = [
 const actions = {
   screen: { fix: 'update', label: 'Install maintenance update' },
   ports: { fix: 'connect', label: 'Restore connection' },
-  power: { fix: 'restart', label: 'Restart device' },
-  security: { fix: 'password', label: 'Reset verified account' },
+  power: { fix: 'restart', label: 'Restart safely' },
+  security: { fix: 'password', label: 'Recover verified access' },
 };
 const normal = {
   screen: ['Display inspected', 'No separate display or software fault is indicated at this stage. Compare the other components with the reported symptom.'],
@@ -99,3 +99,4 @@ export function inspectionFor(ticket) {
     })),
   };
 }
+
