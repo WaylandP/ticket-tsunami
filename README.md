@@ -1,11 +1,19 @@
 # Ticket Tsunami
 
+[![CI](https://github.com/WaylandP/ticket-tsunami/actions/workflows/ci.yml/badge.svg)](https://github.com/WaylandP/ticket-tsunami/actions/workflows/ci.yml)
+
 A help desk survival game for your browser. It's 9 AM, you're the only one on
 the help desk, and the tickets are coming. Read each one, pick the fix that
 actually solves it, and keep the queue from flooding until 5 PM — or go down
 swinging in overtime.
 
-**Play it:** https://ticket-tsunami.vercel.app
+### ▶ [Play it now](https://ticket-tsunami.vercel.app)
+
+![The queue rising toward the water line, light mode](docs/play-light.png)
+
+| Phone, dark mode | Shift report |
+| --- | --- |
+| ![Playing on a phone in dark mode](docs/play-dark-phone.png) | ![The shift report on a phone in dark mode](docs/report-dark-phone.png) |
 
 ## How to play
 
