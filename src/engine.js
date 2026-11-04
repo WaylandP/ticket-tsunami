@@ -2,7 +2,7 @@
 // time comes in through tick(dt) and randomness from a seeded generator,
 // so a game can be replayed exactly and tested in Node.
 
-import { TICKETS, NAMES, SPAM, REGULARS } from './tickets.js';
+import { TICKETS, NAMES, SPAM, REGULARS, REPAIRS } from './tickets.js';
 
 export const FIXES = [
   { id: 'restart', label: 'Restart it', key: '1' },
@@ -155,6 +155,7 @@ export function createGame(seed = 1, difficulty = DEFAULT_DIFFICULTY, mode = 'sh
     vipsClosed: 0,
     spamClosed: 0,
     spamMissed: 0,
+    repairsClosed: 0,
     reopens: 0,
     bossesClosed: 0,
     bossSpawned: false,
@@ -166,6 +167,7 @@ export function createGame(seed = 1, difficulty = DEFAULT_DIFFICULTY, mode = 'sh
     slowUntil: 0, // coffee break: the world slows until then
     frenzyUntil: 0, // printer fire: double points until then
     nextFrenzy: start + (mode === 'endless' ? 45_000 : 60_000),
+    nextWalkIn: start + (mode === 'endless' ? 22_000 : 32_000),
     tutorialStep: 0,
     tickets: [],
     nextId: 1,
@@ -345,6 +347,20 @@ export function tick(game, dt) {
     game.nextOutage = game.t + lerp(diff.outage.gapMin, diff.outage.gapMax, rand(game));
   }
 
+  // Walk-ins: someone carries the machine to your desk. Two fixes, in order.
+  if (game.mode !== 'tutorial' && game.t >= game.nextWalkIn && game.tickets.length < MAX_QUEUE) {
+    const r = pick(game, REPAIRS);
+    const ticket = {
+      id: game.nextId++, template: -3, kind: 'repair', device: r.device,
+      stages: [...r.stages], stage: 0, fix: r.stages[0],
+      text: r.text, from: pick(game, NAMES), vip: false, age: 0,
+      patience: patienceFor(game.t, diff) * 1.8, selfFixAt: null, hint: true,
+    };
+    game.tickets.push(ticket);
+    events.push({ type: 'spawn', ticket });
+    game.nextWalkIn = game.t + lerp(40_000, 70_000, rand(game));
+  }
+
   // The Monday boss ticket: three fixes, in order, before the all-hands.
   if (diff.boss && game.mode === 'shift' && !game.bossSpawned && game.t >= 70_000 && game.tickets.length < MAX_QUEUE) {
     game.bossSpawned = true;
@@ -416,7 +432,7 @@ export function applyFix(game, ticketId, fixId) {
     const mult = multiplier(game.streak);
     const frenzy = game.t < game.frenzyUntil;
     const kindMult = ticket.vip ? 2 : ticket.kind === 'spam' ? 1.5 : 1;
-    const base = ticket.stages ? 300 + 200 * remaining : 100 + 100 * remaining;
+    const base = 100 + 100 * remaining + (ticket.stages ? 100 * ticket.stages.length : 0);
     const points = Math.round(base * mult * kindMult * (frenzy ? 2 : 1) * difficultyFor(game.difficulty).scoreMult);
     game.tickets.splice(game.tickets.indexOf(ticket), 1);
     game.score += points;
@@ -426,6 +442,7 @@ export function applyFix(game, ticketId, fixId) {
     if (ticket.vip) game.vipsClosed++;
     if (ticket.kind === 'spam') game.spamClosed++;
     if (ticket.kind === 'boss') game.bossesClosed++;
+    if (ticket.kind === 'repair') game.repairsClosed++;
     game.minCloseMs = game.minCloseMs === null ? ticket.age : Math.min(game.minCloseMs, ticket.age);
     game.totalCloseMs += ticket.age;
     let charge = false;
@@ -473,6 +490,7 @@ export function summary(game) {
     spamMissed: game.spamMissed,
     reopens: game.reopens,
     bossesClosed: game.bossesClosed,
+    repairsClosed: game.repairsClosed,
     minCloseMs: game.minCloseMs,
     avgCloseMs: game.closed ? Math.round(game.totalCloseMs / game.closed) : null,
     confusions: { ...game.confusions },
@@ -497,6 +515,7 @@ export function shiftInsights(s) {
   if (s.spamMissed >= 1) out.push(`Junk mail fooled you ${s.spamMissed === 1 ? 'once' : `${s.spamMissed} times`}. If it smells like a scam, it's Not an IT problem.`);
   if (s.expired >= 3) out.push(`${s.expired} tickets timed out untouched. A wrong guess at least earns a hint.`);
   if (s.overflowed >= 2) out.push('The queue overflowed. Coffee and the auto-reply exist for exactly this.');
+  if (s.repairsClosed >= 2) out.push(`${s.repairsClosed} machines walked in broken and walked out fixed. The bench respects you.`);
   if (s.bossesClosed >= 1) out.push('You fixed the projector before the all-hands. Hero.');
   if (s.accuracy === 100 && s.closed >= 10) out.push('Not one wrong fix all shift. The help desk fears you.');
   if (s.avgCloseMs !== null && s.avgCloseMs < 3000 && s.closed >= 10) out.push(`Average fix time ${(s.avgCloseMs / 1000).toFixed(1)}s. Lightning.`);
@@ -543,6 +562,7 @@ export const ACHIEVEMENTS = [
   { id: 'night-shift', label: 'Night Shift', desc: 'Work a full hour of overtime', test: (s) => s.overtimeMs >= HOUR_MS },
   { id: 'quick-draw', label: 'Quick Draw', desc: 'Close a ticket within 2 seconds', test: (s) => s.minCloseMs !== null && s.minCloseMs < 2000 },
   { id: 'boss-fight', label: 'Boss Fight', desc: 'Fix the projector before the all-hands', test: (s) => s.bossesClosed >= 1 },
+  { id: 'technician', label: 'Certified Technician', desc: 'Complete 3 walk-in repairs in one shift', test: (s) => s.repairsClosed >= 3 },
 ];
 
 /** Which achievements this shift earned. The caller keeps the lifetime set. */

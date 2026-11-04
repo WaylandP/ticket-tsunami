@@ -100,3 +100,16 @@ export const REGULARS = [
   { name: 'Frank, remote', fix: 'connect' }, // it's always the connection
   { name: 'Jules the intern', selfFix: true }, // usually figures it out alone
 ];
+
+// Walk-in repairs: an end user carries the machine to your desk. Each one
+// takes two fixes, in order, like treating a patient — diagnose, then cure.
+export const REPAIRS = [
+  { device: 'laptop', text: 'Laptop won’t turn on. Smells faintly of toast.', stages: ['connect', 'restart'] },
+  { device: 'laptop', text: 'Laptop is on, but every key types the letter “j”.', stages: ['restart', 'update'] },
+  { device: 'printer', text: 'The printer ate 40 pages and is now making a grinding noise.', stages: ['restart', 'update'] },
+  { device: 'printer', text: 'Printer prints everything in a deep, unsettling pink.', stages: ['update', 'restart'] },
+  { device: 'phone', text: 'Work phone is locked. The last person who knew the code retired.', stages: ['password', 'restart'] },
+  { device: 'phone', text: 'Phone insists it’s in airplane mode. It is not on an airplane.', stages: ['connect', 'restart'] },
+  { device: 'monitor', text: 'Monitor shows everything upside down. The user has adapted. Fix it anyway.', stages: ['connect', 'restart'] },
+  { device: 'monitor', text: 'Second monitor only works while someone holds the cable. His name is Greg.', stages: ['connect', 'update'] },
+];
