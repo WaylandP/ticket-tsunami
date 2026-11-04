@@ -154,3 +154,77 @@ DEVICE_ART.tv = `<svg aria-hidden="true" viewBox="0 0 48 48">
     </g>
     <path d="M22 36v4m4-4v4M18 42h12" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
   </svg>`;
+
+// --- full-body visitors for the walk-in counter ------------------------------
+// A person who walks up holding their broken machine, doctor-game style.
+// Deterministic from the name, with custom looks for the regulars.
+
+const SHIRTS = ['#2f6f8f', '#7c5cbf', '#2f8f62', '#c0564b', '#b58a2e', '#4a5568', '#996a8e', '#3f7f7f'];
+
+function personParts(name) {
+  const h = hashName(name);
+  return {
+    skin: AV_SKIN[h % AV_SKIN.length],
+    hairColor: AV_HAIR[(h >> 4) % AV_HAIR.length],
+    hairStyle: (h >> 2) % 4,
+    shirt: SHIRTS[(h >> 6) % SHIRTS.length],
+  };
+}
+
+const HEAD_HAIR = [
+  (c) => `<path d="M27 38a15 15 0 0 1 30 0l-3.6 1a11.5 11.5 0 0 0-22.8 0z" fill="${c}"/>`,
+  (c) => `<circle cx="32" cy="27" r="5.5" fill="${c}"/><circle cx="42" cy="23.5" r="6" fill="${c}"/><circle cx="52" cy="27" r="5.5" fill="${c}"/>`,
+  (c) => `<path d="M27 38a15 15 0 0 1 30 0l-3.6 1a11.5 11.5 0 0 0-22.8 0z" fill="${c}"/><circle cx="42" cy="19.5" r="4.2" fill="${c}"/>`,
+  () => '',
+];
+
+const faceBits = (lookLeft = false) => `
+  <g class="eyes"><circle cx="36.5" cy="40" r="1.9" fill="#2b2b2b"/><circle cx="47.5" cy="40" r="1.9" fill="#2b2b2b"/></g>
+  <path d="M36.5 46.5q5.5 4 11 0" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round"/>`;
+
+/** A visitor at the counter: head, torso, device held in front, arms over it. */
+export function personSVG(name, device) {
+  const p = personParts(name);
+  let hair = HEAD_HAIR[p.hairStyle](p.hairColor);
+  let extras = '';
+  let shirt = p.shirt;
+  let skin = p.skin;
+  if (name === 'The CEO') {
+    shirt = '#1d242f'; skin = '#f1c27d';
+    hair = HEAD_HAIR[0]('#555b63');
+    extras = `<path d="M31 22l4.5 3.6 6.5-5.1 6.5 5.1 4.5-3.6v5h-22z" fill="#b8860b"/>
+      <rect x="31.5" y="36.5" width="8.6" height="4.6" rx="1.6" fill="#1d242f"/>
+      <rect x="43.9" y="36.5" width="8.6" height="4.6" rx="1.6" fill="#1d242f"/>
+      <path d="M40.1 38.4h3.8" stroke="#1d242f" stroke-width="2"/>
+      <path d="M42 68l-4 7 4 13 4-13z" fill="#b3261e"/>`;
+  } else if (name === 'Gary (it’s always Gary)') {
+    skin = '#ffdbac';
+    hair = `<path d="M29 32l4-5 4 3 5-4.5 5 4.5 4-3 4 5" fill="none" stroke="#6b4423" stroke-width="3.6" stroke-linecap="round"/>`;
+    extras = `<path d="M33.5 37h6M44.5 37h6" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round"/>
+      <path d="M34 43.5q2.4 1.6 4.8 0M45.2 43.5q2.4 1.6 4.8 0" fill="none" stroke="#b08968" stroke-width="1.6"/>`;
+  } else if (name === 'Jules the intern') {
+    skin = '#c68642';
+    extras = `<path d="M27 37a15 15 0 0 1 30 0" fill="none" stroke="#1d242f" stroke-width="4.6"/>
+      <rect x="23.5" y="34" width="6.5" height="10.5" rx="3" fill="#1d242f"/>
+      <rect x="54" y="34" width="6.5" height="10.5" rx="3" fill="#1d242f"/>`;
+  } else if (name === 'Frank, remote') {
+    skin = '#8d5524';
+    hair = HEAD_HAIR[0]('#555b63');
+    extras = `<path d="M27 37a15 15 0 0 1 30 0" fill="none" stroke="#1d242f" stroke-width="4.2"/>
+      <rect x="53.5" y="35" width="6.2" height="9.6" rx="2.8" fill="#1d242f"/>
+      <path d="M56 44q0 6-8.5 6.5" fill="none" stroke="#1d242f" stroke-width="3"/>
+      <circle cx="46.5" cy="51" r="2.4" fill="#1d242f"/>`;
+  }
+  const deviceArt = (DEVICE_ART[device] || '').replace(
+    '<svg aria-hidden="true" viewBox="0 0 48 48">',
+    '<svg viewBox="0 0 48 48" x="23" y="60" width="38" height="38">',
+  );
+  return `<svg aria-hidden="true" viewBox="0 0 84 112" class="person">
+    <rect x="15" y="64" width="54" height="48" rx="17" fill="${shirt}"/>
+    <circle cx="42" cy="40" r="15" fill="${skin}"/>
+    ${hair}${faceBits()}${extras}
+    ${deviceArt}
+    <path d="M19 76q-5 14 11 17" fill="none" stroke="${skin}" stroke-width="7.5" stroke-linecap="round"/>
+    <path d="M65 76q5 14-11 17" fill="none" stroke="${skin}" stroke-width="7.5" stroke-linecap="round"/>
+  </svg>`;
+}
