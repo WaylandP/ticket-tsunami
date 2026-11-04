@@ -17,6 +17,8 @@ swinging in overtime.
 
 ## How to play
 
+- Pick your day before you clock in: **Casual Friday**, **Nine to Five** or
+  **Monday**. Harder days pay more points, and each keeps its own best score.
 - Tickets pile up in the queue. The highlighted one is the most urgent.
 - Pick a fix with the buttons or keys **1–5**: Restart it, Reset password,
   Check connection, Install updates, or Not an IT problem.

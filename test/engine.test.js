@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   FIXES, FIX_IDS, HOUR_MS, SHIFT_MS, MAX_QUEUE, MAX_CSAT,
+  DIFFICULTIES, DEFAULT_DIFFICULTY, difficultyFor,
   createGame, tick, applyFix, mostUrgent, multiplier, clock, rankFor,
   spawnInterval, patienceFor, shiftProgress, summary,
 } from '../src/engine.js';
 
 /** Play a whole game in fixed steps, closing the most urgent ticket correctly each step. */
-function autoplay(seed, totalMs, step = 50) {
-  const game = createGame(seed);
+function autoplay(seed, totalMs, step = 50, difficulty = DEFAULT_DIFFICULTY) {
+  const game = createGame(seed, difficulty);
   const events = [];
   for (let t = 0; t < totalMs && game.phase === 'playing'; t += step) {
     events.push(...tick(game, step));
@@ -161,15 +162,61 @@ test('the clock reads like a clock', () => {
 });
 
 test('the day gets harder: faster arrivals, thinner patience', () => {
-  assert.ok(spawnInterval(SHIFT_MS) < spawnInterval(0));
-  assert.ok(patienceFor(SHIFT_MS) < patienceFor(0));
-  // Overtime keeps tightening the screws.
-  assert.ok(spawnInterval(SHIFT_MS + 5 * 60_000) < spawnInterval(SHIFT_MS));
-  assert.ok(patienceFor(SHIFT_MS + 5 * 60_000) < patienceFor(SHIFT_MS));
-  // But never below the floors.
-  assert.ok(spawnInterval(SHIFT_MS + 1e9) >= 380);
-  assert.ok(patienceFor(SHIFT_MS + 1e9) >= 3800);
+  for (const diff of DIFFICULTIES) {
+    assert.ok(spawnInterval(SHIFT_MS, diff) < spawnInterval(0, diff), diff.id);
+    assert.ok(patienceFor(SHIFT_MS, diff) < patienceFor(0, diff), diff.id);
+    // Overtime keeps tightening the screws.
+    assert.ok(spawnInterval(SHIFT_MS + 5 * 60_000, diff) < spawnInterval(SHIFT_MS, diff), diff.id);
+    assert.ok(patienceFor(SHIFT_MS + 5 * 60_000, diff) < patienceFor(SHIFT_MS, diff), diff.id);
+    // But never below the floors.
+    assert.ok(spawnInterval(SHIFT_MS + 1e9, diff) >= diff.spawn.min, diff.id);
+    assert.ok(patienceFor(SHIFT_MS + 1e9, diff) >= diff.patience.min, diff.id);
+  }
   assert.equal(shiftProgress(SHIFT_MS * 10), 1);
+});
+
+test('three difficulties, from Casual Friday to Monday', () => {
+  assert.equal(DIFFICULTIES.length, 3);
+  assert.equal(new Set(DIFFICULTIES.map((d) => d.id)).size, 3);
+  const [friday, nine, monday] = DIFFICULTIES;
+  assert.equal(difficultyFor(DEFAULT_DIFFICULTY).id, nine.id);
+  assert.equal(difficultyFor('nonsense').id, nine.id, 'unknown ids fall back to the default day');
+  for (const t of [0, SHIFT_MS / 2, SHIFT_MS]) {
+    assert.ok(spawnInterval(t, monday) < spawnInterval(t, nine), 'Monday spawns faster than Nine to Five');
+    assert.ok(spawnInterval(t, nine) < spawnInterval(t, friday), 'Nine to Five spawns faster than Friday');
+    assert.ok(patienceFor(t, monday) < patienceFor(t, nine));
+    assert.ok(patienceFor(t, nine) < patienceFor(t, friday));
+  }
+  assert.ok(friday.scoreMult < nine.scoreMult && nine.scoreMult < monday.scoreMult, 'harder days pay more');
+});
+
+test('harder days pay more points for the same ticket', () => {
+  const close = (difficulty) => {
+    const g = createGame(5, difficulty);
+    tick(g, 1000);
+    const t = g.tickets[0];
+    t.age = 0; // same freshness on both days
+    return applyFix(g, t.id, t.fix).points;
+  };
+  assert.ok(close('monday') > close('friday'));
+});
+
+test('the difficulty is stamped on the game and the summary', () => {
+  const g = createGame(1, 'monday');
+  assert.equal(g.difficulty, 'monday');
+  assert.equal(g.nextOutage, difficultyFor('monday').outage.first);
+  const s = summary(g);
+  assert.equal(s.difficulty, 'monday');
+  assert.equal(s.difficultyLabel, 'Monday');
+  assert.equal(createGame(1).difficulty, DEFAULT_DIFFICULTY);
+});
+
+test('perfect play survives the shift on every difficulty', () => {
+  for (const diff of DIFFICULTIES) {
+    const { game } = autoplay(17, SHIFT_MS + 5000, 50, diff.id);
+    assert.equal(game.phase, 'playing', `perfect play should survive a ${diff.label}`);
+    assert.equal(summary(game).madeItToFive, true, diff.id);
+  }
 });
 
 test('ranks climb with score', () => {

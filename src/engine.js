@@ -45,12 +45,57 @@ export const shiftProgress = (t) => Math.min(1, t / SHIFT_MS);
 /** Minutes of overtime, scaled: 0 during the shift, then climbs. */
 const overtime = (t) => Math.max(0, (t - SHIFT_MS) / 60_000);
 
-export function spawnInterval(t) {
-  return Math.max(380, lerp(3200, 1050, shiftProgress(t)) / (1 + 0.6 * overtime(t)));
+/**
+ * Three kinds of day. Harder days spawn faster, grant less patience,
+ * suffer more outages — and pay more points.
+ */
+export const DIFFICULTIES = [
+  {
+    id: 'friday',
+    label: 'Casual Friday',
+    blurb: 'Half the office is out. The tickets trickle in.',
+    scoreMult: 0.75,
+    vipChance: 0.05,
+    spawn: { start: 4500, end: 2200, min: 900, overtime: 0.45 },
+    patience: { start: 22_000, end: 15_000, min: 6000, overtime: 0.25 },
+    outage: { first: 70_000, gapMin: 60_000, gapMax: 90_000, size: 2 },
+  },
+  {
+    id: 'nineToFive',
+    label: 'Nine to Five',
+    blurb: 'A normal day at the help desk. Busy, but survivable.',
+    scoreMult: 1,
+    vipChance: 0.08,
+    spawn: { start: 3800, end: 1600, min: 700, overtime: 0.5 },
+    patience: { start: 18_000, end: 11_000, min: 5000, overtime: 0.3 },
+    outage: { first: 55_000, gapMin: 45_000, gapMax: 70_000, size: 3 },
+  },
+  {
+    id: 'monday',
+    label: 'Monday',
+    blurb: 'Everyone’s laptop broke over the weekend. Good luck.',
+    scoreMult: 1.3,
+    vipChance: 0.1,
+    spawn: { start: 3000, end: 1000, min: 380, overtime: 0.6 },
+    patience: { start: 14_000, end: 8000, min: 3800, overtime: 0.35 },
+    outage: { first: 45_000, gapMin: 35_000, gapMax: 55_000, size: 3 },
+  },
+];
+
+export const DEFAULT_DIFFICULTY = 'nineToFive';
+
+export function difficultyFor(id) {
+  return DIFFICULTIES.find((d) => d.id === id) || DIFFICULTIES[1];
 }
 
-export function patienceFor(t) {
-  return Math.max(3800, lerp(15_000, 8500, shiftProgress(t)) / (1 + 0.35 * overtime(t)));
+export function spawnInterval(t, diff = DIFFICULTIES[1]) {
+  const s = diff.spawn;
+  return Math.max(s.min, lerp(s.start, s.end, shiftProgress(t)) / (1 + s.overtime * overtime(t)));
+}
+
+export function patienceFor(t, diff = DIFFICULTIES[1]) {
+  const p = diff.patience;
+  return Math.max(p.min, lerp(p.start, p.end, shiftProgress(t)) / (1 + p.overtime * overtime(t)));
 }
 
 /** Combo multiplier: x1, then +0.5 for every 5 tickets in a row, up to x3. */
@@ -78,9 +123,10 @@ export function rankFor(score) {
 
 // --- game ----------------------------------------------------------------------
 
-export function createGame(seed = 1) {
+export function createGame(seed = 1, difficulty = DEFAULT_DIFFICULTY) {
   return {
     seed,
+    difficulty: difficultyFor(difficulty).id,
     rng: seed | 0,
     phase: 'playing', // 'playing' | 'over'
     t: 0,
@@ -97,7 +143,7 @@ export function createGame(seed = 1) {
     tickets: [],
     nextId: 1,
     nextSpawn: 900,
-    nextOutage: 50_000,
+    nextOutage: difficultyFor(difficulty).outage.first,
     pending: [], // scheduled spawns from outages: { at, fix }
     lastTemplate: -1,
   };
@@ -113,8 +159,9 @@ function makeTicket(game, fix) {
   const [tpl, index] = choice;
   game.lastTemplate = index;
 
-  const vip = game.t > 30_000 && !fix && rand(game) < 0.08;
-  const patience = patienceFor(game.t) * (vip ? 0.7 : 1);
+  const diff = difficultyFor(game.difficulty);
+  const vip = game.t > 30_000 && !fix && rand(game) < diff.vipChance;
+  const patience = patienceFor(game.t, diff) * (vip ? 0.7 : 1);
   // Now and then a user fixes it themselves before you get there.
   const selfFixAt = !vip && game.t > 20_000 && rand(game) < 0.06 ? patience * lerp(0.35, 0.6, rand(game)) : null;
 
@@ -180,11 +227,12 @@ export function tick(game, dt) {
   }
 
   // Outages: a burst of the same kind of ticket.
+  const diff = difficultyFor(game.difficulty);
   if (game.t >= game.nextOutage) {
     const outage = pick(game, OUTAGES);
     events.push({ type: 'outage', ...outage });
-    for (let i = 0; i < 3; i++) game.pending.push({ at: game.t + 400 + i * 700, fix: outage.fix });
-    game.nextOutage = game.t + lerp(38_000, 55_000, rand(game));
+    for (let i = 0; i < diff.outage.size; i++) game.pending.push({ at: game.t + 400 + i * 700, fix: outage.fix });
+    game.nextOutage = game.t + lerp(diff.outage.gapMin, diff.outage.gapMax, rand(game));
   }
   game.pending = game.pending.filter((p) => {
     if (p.at > game.t) return true;
@@ -195,7 +243,7 @@ export function tick(game, dt) {
   // Regular arrivals.
   while (game.phase === 'playing' && game.t >= game.nextSpawn) {
     addTicket(game, events, null);
-    game.nextSpawn += spawnInterval(game.t) * lerp(0.75, 1.25, rand(game));
+    game.nextSpawn += spawnInterval(game.t, diff) * lerp(0.75, 1.25, rand(game));
   }
   return events;
 }
@@ -221,7 +269,7 @@ export function applyFix(game, ticketId, fixId) {
   if (ticket.fix === fixId) {
     const remaining = Math.max(0, 1 - ticket.age / ticket.patience);
     const mult = multiplier(game.streak);
-    const points = Math.round((100 + 100 * remaining) * mult * (ticket.vip ? 2 : 1));
+    const points = Math.round((100 + 100 * remaining) * mult * (ticket.vip ? 2 : 1) * difficultyFor(game.difficulty).scoreMult);
     game.tickets.splice(game.tickets.indexOf(ticket), 1);
     game.score += points;
     game.streak++;
@@ -242,6 +290,8 @@ export function summary(game) {
   const attempts = game.closed + game.wrong;
   return {
     score: game.score,
+    difficulty: game.difficulty,
+    difficultyLabel: difficultyFor(game.difficulty).label,
     clock: clock(game.t),
     madeItToFive: game.t >= SHIFT_MS,
     closed: game.closed,

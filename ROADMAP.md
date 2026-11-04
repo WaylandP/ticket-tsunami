@@ -14,13 +14,13 @@ A box gets checked only when the work is built, tested and visible in the game.
 - [x] Keyboard (1–5, arrows, P/Esc) and touch/mouse play
 - [x] Engine test suite running in CI on every push
 - [x] Static deploy on Vercel
+- [x] Three difficulties — Casual Friday, Nine to Five, Monday — harder days pay more, each with its own best score
 
 ## Next
 
 - [ ] Sound effects with a mute toggle
 - [ ] Daily challenge: everyone plays the same seeded shift
 - [ ] More ticket variety and rare special tickets
-- [ ] Difficulty settings (calm Friday / normal / Monday)
 - [ ] A short tutorial first shift
 - [ ] Achievements on the shift report
 - [ ] Installable as an app (PWA) and playable offline
