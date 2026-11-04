@@ -4,9 +4,21 @@ import { readFileSync } from 'node:fs';
 import {
   FIXES, FIX_IDS, HOUR_MS, SHIFT_MS, MAX_QUEUE, MAX_CSAT,
   DIFFICULTIES, DEFAULT_DIFFICULTY, difficultyFor,
+  POWERS, ACHIEVEMENTS, usePower, evaluateAchievements,
   createGame, tick, applyFix, mostUrgent, multiplier, clock, rankFor,
   spawnInterval, patienceFor, shiftProgress, summary,
 } from '../src/engine.js';
+
+/** A hand-made open ticket for surgical tests. */
+function plant(game, over = {}) {
+  const ticket = {
+    id: game.nextId++, template: 0, kind: 'normal', fix: 'restart',
+    text: 'x', from: 'test', vip: false, age: 0, patience: 1e9, selfFixAt: null, hint: false,
+    ...over,
+  };
+  game.tickets.push(ticket);
+  return ticket;
+}
 
 /** Play a whole game in fixed steps, closing the most urgent ticket correctly each step. */
 function autoplay(seed, totalMs, step = 50, difficulty = DEFAULT_DIFFICULTY) {
@@ -284,6 +296,142 @@ test('summary tallies the shift honestly', () => {
   assert.equal(s.closed, 1);
   assert.equal(s.accuracy, 50);
   assert.equal(s.clock, clock(g.t));
+});
+
+test('spam tickets: closing pays 1.5x, ignoring costs nothing', () => {
+  // Ignoring: a spam ticket times out with no happiness loss and no "expired".
+  const g = createGame(3);
+  plant(g, { kind: 'spam', fix: 'notit', patience: 100 });
+  const events = tick(g, 300);
+  assert.ok(events.some((e) => e.type === 'spamGone'));
+  assert.equal(g.csat, MAX_CSAT);
+  assert.equal(g.expired, 0);
+
+  // Closing: a fresh spam ticket pays 1.5x what a fresh normal ticket pays.
+  const pointsFor = (over) => {
+    const game = createGame(5);
+    const t = plant(game, over);
+    return applyFix(game, t.id, t.fix).points;
+  };
+  const normal = pointsFor({});
+  const spam = pointsFor({ kind: 'spam', fix: 'notit' });
+  assert.equal(spam, Math.round(normal * 1.5));
+  const g2 = createGame(5);
+  plant(g2, { kind: 'spam', fix: 'notit' });
+  applyFix(g2, g2.tickets[0].id, 'notit');
+  assert.equal(g2.spamClosed, 1);
+});
+
+test('spam shows up on its own, and is always "Not an IT problem"', () => {
+  const { events } = autoplay(11, 120_000);
+  const spam = events.filter((e) => e.type === 'spawn' && e.ticket.kind === 'spam');
+  assert.ok(spam.length >= 1, 'junk mail should arrive during a full shift');
+  for (const { ticket } of spam) assert.equal(ticket.fix, 'notit');
+});
+
+test('some closed tickets come back: "it’s doing it again"', () => {
+  let reopened = null;
+  for (let seed = 1; seed < 80 && !reopened; seed++) {
+    const g = createGame(seed);
+    g.t = 50_000; // reopens only happen mid-shift
+    g.nextSpawn = g.nextOutage = g.nextFrenzy = 1e12; // nothing else arrives during this test
+    const t = plant(g, { template: 7, fix: 'password', text: 'help', from: 'Dana from HR' });
+    applyFix(g, t.id, 'password');
+    if (!g.pending.some((p) => p.reopen)) continue;
+    for (let ms = 0; ms < 12_000 && !reopened; ms += 100) {
+      reopened = tick(g, 100).find((e) => e.type === 'spawn' && e.ticket.kind === 'reopen')?.ticket;
+    }
+    if (reopened) {
+      assert.ok(reopened.text.startsWith('RE: '));
+      assert.equal(reopened.from, 'Dana from HR');
+      assert.equal(g.reopens, 1);
+      assert.equal(applyFix(g, reopened.id, 'password').type, 'correct', 'a reopened ticket closes like any other');
+    }
+  }
+  assert.ok(reopened, 'no reopen found across 80 seeds — the chance is broken');
+});
+
+test('fire drills double the points while they last', () => {
+  const { events } = autoplay(11, 80_000);
+  assert.ok(events.some((e) => e.type === 'frenzy'), 'a fire drill should hit within 80s');
+
+  const pointsFor = (frenzy) => {
+    const g = createGame(5);
+    if (frenzy) g.frenzyUntil = g.t + 5000;
+    const t = plant(g);
+    return applyFix(g, t.id, t.fix).points;
+  };
+  assert.equal(pointsFor(true), pointsFor(false) * 2);
+});
+
+test('every 10-ticket streak earns a power charge, capped at 3', () => {
+  const g = createGame(1);
+  for (let i = 0; i < 10; i++) {
+    const t = plant(g);
+    const res = applyFix(g, t.id, t.fix);
+    assert.equal(res.charge, i === 9, `only the 10th close grants a charge (close ${i + 1})`);
+  }
+  assert.equal(g.charges, 1);
+  g.charges = 3;
+  g.streak = 19;
+  const t = plant(g);
+  assert.equal(applyFix(g, t.id, t.fix).charge, false, 'charges cap at 3');
+  assert.equal(g.charges, 3);
+});
+
+test('coffee slows the world, the wiki reveals fixes, the bot closes one', () => {
+  // Coffee: tickets age at 35% and nothing new arrives while it lasts.
+  const g = createGame(1);
+  g.charges = 3;
+  const t = plant(g);
+  const spawnBefore = g.nextSpawn;
+  assert.equal(usePower(g, 'coffee').power, 'coffee');
+  tick(g, 1000);
+  assert.ok(Math.abs(t.age - 350) < 1, `coffee should slow aging, got ${t.age}`);
+  assert.equal(g.nextSpawn, spawnBefore + 1000, 'spawns wait for the coffee');
+
+  // Wiki: every open ticket shows its fix.
+  plant(g, { fix: 'update' });
+  usePower(g, 'kb');
+  assert.ok(g.tickets.every((x) => x.hint));
+
+  // Bot: closes the most urgent ticket correctly.
+  const closed = usePower(g, 'bot');
+  assert.equal(closed.power, 'bot');
+  assert.equal(closed.closed.type, 'correct');
+  assert.equal(g.charges, 0);
+
+  // No charges, or nothing to close: nothing happens, charges are kept.
+  assert.equal(usePower(g, 'coffee').type, 'none');
+  const empty = createGame(2);
+  empty.charges = 1;
+  assert.equal(usePower(empty, 'bot').type, 'none');
+  assert.equal(empty.charges, 1, 'the bot refuses to waste a charge on an empty queue');
+});
+
+test('an empty queue at noon is noticed', () => {
+  const g = createGame(1);
+  g.t = 3 * HOUR_MS - 50;
+  tick(g, 100);
+  assert.equal(g.inboxZeroNoon, true);
+
+  const busy = createGame(1);
+  busy.t = 3 * HOUR_MS - 50;
+  plant(busy);
+  tick(busy, 100);
+  assert.equal(busy.inboxZeroNoon, false);
+});
+
+test('achievements: all ten are earnable and the fresh game earns none', () => {
+  assert.equal(ACHIEVEMENTS.length, 10);
+  assert.equal(new Set(ACHIEVEMENTS.map((a) => a.id)).size, 10);
+  assert.deepEqual(evaluateAchievements(summary(createGame(1))), []);
+  const everything = {
+    ...summary(createGame(1, 'monday')),
+    closed: 25, accuracy: 100, madeItToFive: true, inboxZeroNoon: true,
+    vipsClosed: 3, bestStreak: 16, spamClosed: 5, overtimeMs: HOUR_MS, minCloseMs: 900,
+  };
+  assert.equal(evaluateAchievements(everything).length, 10, 'a perfect Monday earns all ten');
 });
 
 test('the five fixes are distinct and mapped to keys 1-5', () => {

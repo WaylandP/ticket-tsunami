@@ -2,7 +2,7 @@
 // time comes in through tick(dt) and randomness from a seeded generator,
 // so a game can be replayed exactly and tested in Node.
 
-import { TICKETS, NAMES } from './tickets.js';
+import { TICKETS, NAMES, SPAM } from './tickets.js';
 
 export const FIXES = [
   { id: 'restart', label: 'Restart it', key: '1' },
@@ -140,13 +140,60 @@ export function createGame(seed = 1, difficulty = DEFAULT_DIFFICULTY) {
     overflowed: 0,
     selfFixed: 0,
     vipsClosed: 0,
+    spamClosed: 0,
+    reopens: 0,
+    minCloseMs: null,
+    inboxZeroNoon: false,
+    charges: 0, // power-up charges, earned every 10-ticket streak
+    slowUntil: 0, // coffee break: the world slows until then
+    frenzyUntil: 0, // printer fire: double points until then
+    nextFrenzy: 60_000,
     tickets: [],
     nextId: 1,
     nextSpawn: 900,
     nextOutage: difficultyFor(difficulty).outage.first,
-    pending: [], // scheduled spawns from outages: { at, fix }
+    pending: [], // scheduled spawns: { at, fix } or { at, reopen }
     lastTemplate: -1,
   };
+}
+
+function makeSpam(game) {
+  const diff = difficultyFor(game.difficulty);
+  const s = pick(game, SPAM);
+  return {
+    id: game.nextId++,
+    template: -1,
+    kind: 'spam',
+    fix: 'notit',
+    text: s.text,
+    from: s.from,
+    vip: false,
+    age: 0,
+    patience: patienceFor(game.t, diff) * 1.1,
+    selfFixAt: null,
+    hint: false,
+  };
+}
+
+function spawnReopen(game, events, r) {
+  if (game.tickets.length >= MAX_QUEUE) return; // they gave up and went home
+  const diff = difficultyFor(game.difficulty);
+  const ticket = {
+    id: game.nextId++,
+    template: r.template,
+    kind: 'reopen',
+    fix: r.fix,
+    text: r.text,
+    from: r.from,
+    vip: false,
+    age: 0,
+    patience: patienceFor(game.t, diff) * 0.85,
+    selfFixAt: null,
+    hint: false,
+  };
+  game.tickets.push(ticket);
+  game.reopens++;
+  events.push({ type: 'spawn', ticket });
 }
 
 function makeTicket(game, fix) {
@@ -168,6 +215,7 @@ function makeTicket(game, fix) {
   return {
     id: game.nextId++,
     template: index,
+    kind: 'normal',
     fix: tpl.fix,
     text: tpl.text,
     from: vip ? 'The CEO' : pick(game, NAMES),
@@ -185,7 +233,8 @@ function addTicket(game, events, fix) {
     loseCsat(game, events, 'overflow');
     return;
   }
-  const ticket = makeTicket(game, fix);
+  const spam = !fix && game.t > 25_000 && rand(game) < 0.07;
+  const ticket = spam ? makeSpam(game) : makeTicket(game, fix);
   game.tickets.push(ticket);
   events.push({ type: 'spawn', ticket });
 }
@@ -207,21 +256,36 @@ export function tick(game, dt) {
   const before = game.t;
   game.t += dt;
 
+  // Coffee break: the world slows down. The clock, sadly, does not.
+  const slowed = before < game.slowUntil;
+  const ageDt = slowed ? dt * 0.35 : dt;
+  if (slowed) {
+    game.nextSpawn += dt;
+    game.nextOutage += dt;
+    game.nextFrenzy += dt;
+    for (const p of game.pending) p.at += dt;
+  }
+
   if (before < SHIFT_MS && game.t >= SHIFT_MS) events.push({ type: 'overtime' });
   if (Math.floor(before / HOUR_MS) !== Math.floor(game.t / HOUR_MS)) events.push({ type: 'hour', clock: clock(game.t) });
+  if (before < 3 * HOUR_MS && game.t >= 3 * HOUR_MS && game.tickets.length === 0) game.inboxZeroNoon = true;
 
-  // Age tickets; expire or self-fix.
+  // Age tickets; expire, self-fix, or quietly bin the junk.
   for (const ticket of [...game.tickets]) {
-    ticket.age += dt;
+    ticket.age += ageDt;
     if (ticket.selfFixAt !== null && ticket.age >= ticket.selfFixAt) {
       game.tickets.splice(game.tickets.indexOf(ticket), 1);
       game.selfFixed++;
       events.push({ type: 'selfFixed', ticket });
     } else if (ticket.age >= ticket.patience) {
       game.tickets.splice(game.tickets.indexOf(ticket), 1);
-      game.expired++;
-      events.push({ type: 'expired', ticket });
-      loseCsat(game, events, 'expired');
+      if (ticket.kind === 'spam') {
+        events.push({ type: 'spamGone', ticket }); // nobody misses it
+      } else {
+        game.expired++;
+        events.push({ type: 'expired', ticket });
+        loseCsat(game, events, 'expired');
+      }
     }
     if (game.phase !== 'playing') return events;
   }
@@ -234,9 +298,21 @@ export function tick(game, dt) {
     for (let i = 0; i < diff.outage.size; i++) game.pending.push({ at: game.t + 400 + i * 700, fix: outage.fix });
     game.nextOutage = game.t + lerp(diff.outage.gapMin, diff.outage.gapMax, rand(game));
   }
+
+  // Fire drill: something is literally on fire. Double points while it burns.
+  if (game.t >= game.nextFrenzy) {
+    game.frenzyUntil = game.t + 8000;
+    events.push({ type: 'frenzy', until: game.frenzyUntil });
+    game.pending.push({ at: game.t + 300, fix: null }, { at: game.t + 900, fix: null });
+    game.nextFrenzy = game.t + lerp(70_000, 110_000, rand(game));
+  }
+
   game.pending = game.pending.filter((p) => {
     if (p.at > game.t) return true;
-    if (game.phase === 'playing') addTicket(game, events, p.fix);
+    if (game.phase === 'playing') {
+      if (p.reopen) spawnReopen(game, events, p.reopen);
+      else addTicket(game, events, p.fix);
+    }
     return false;
   });
 
@@ -269,14 +345,30 @@ export function applyFix(game, ticketId, fixId) {
   if (ticket.fix === fixId) {
     const remaining = Math.max(0, 1 - ticket.age / ticket.patience);
     const mult = multiplier(game.streak);
-    const points = Math.round((100 + 100 * remaining) * mult * (ticket.vip ? 2 : 1) * difficultyFor(game.difficulty).scoreMult);
+    const frenzy = game.t < game.frenzyUntil;
+    const kindMult = ticket.vip ? 2 : ticket.kind === 'spam' ? 1.5 : 1;
+    const points = Math.round((100 + 100 * remaining) * mult * kindMult * (frenzy ? 2 : 1) * difficultyFor(game.difficulty).scoreMult);
     game.tickets.splice(game.tickets.indexOf(ticket), 1);
     game.score += points;
     game.streak++;
     game.bestStreak = Math.max(game.bestStreak, game.streak);
     game.closed++;
     if (ticket.vip) game.vipsClosed++;
-    return { type: 'correct', ticket, points, mult, streak: game.streak };
+    if (ticket.kind === 'spam') game.spamClosed++;
+    game.minCloseMs = game.minCloseMs === null ? ticket.age : Math.min(game.minCloseMs, ticket.age);
+    let charge = false;
+    if (game.streak % 10 === 0 && game.charges < 3) {
+      game.charges++;
+      charge = true;
+    }
+    // Some users write back: "it's doing it again."
+    if (ticket.kind === 'normal' && !ticket.vip && game.t > 40_000 && rand(game) < 0.1) {
+      game.pending.push({
+        at: game.t + lerp(6000, 10_000, rand(game)),
+        reopen: { template: ticket.template, fix: fixId, text: `RE: ${ticket.text}`, from: ticket.from },
+      });
+    }
+    return { type: 'correct', ticket, points, mult, streak: game.streak, charge, frenzy };
   }
 
   game.wrong++;
@@ -301,6 +393,57 @@ export function summary(game) {
     overflowed: game.overflowed,
     vipsClosed: game.vipsClosed,
     selfFixed: game.selfFixed,
+    spamClosed: game.spamClosed,
+    reopens: game.reopens,
+    minCloseMs: game.minCloseMs,
+    inboxZeroNoon: game.inboxZeroNoon,
+    overtimeMs: Math.max(0, game.t - SHIFT_MS),
     rank: rankFor(game.score),
   };
+}
+
+// --- power-ups -----------------------------------------------------------------
+
+export const POWERS = [
+  { id: 'coffee', label: 'Coffee', key: 'q', desc: 'Everything slows down for 5 seconds' },
+  { id: 'kb', label: 'Wiki', key: 'w', desc: 'Reveal the fix on every open ticket' },
+  { id: 'bot', label: 'Auto-reply', key: 'e', desc: 'Close the most urgent ticket' },
+];
+
+/** Spend one charge (earned every 10-ticket streak) on a power-up. */
+export function usePower(game, powerId) {
+  if (game.phase !== 'playing' || game.charges <= 0) return { type: 'none' };
+  if (!POWERS.some((p) => p.id === powerId)) return { type: 'none' };
+  if (powerId === 'bot' && !game.tickets.length) return { type: 'none' }; // nothing to close, keep the charge
+  game.charges--;
+  if (powerId === 'coffee') {
+    game.slowUntil = game.t + 5000;
+    return { type: 'power', power: 'coffee' };
+  }
+  if (powerId === 'kb') {
+    for (const t of game.tickets) t.hint = true;
+    return { type: 'power', power: 'kb' };
+  }
+  const target = mostUrgent(game);
+  return { type: 'power', power: 'bot', closed: applyFix(game, target.id, target.fix) };
+}
+
+// --- achievements ---------------------------------------------------------------
+
+export const ACHIEVEMENTS = [
+  { id: 'first-close', label: 'Hello, IT', desc: 'Close a ticket', test: (s) => s.closed >= 1 },
+  { id: 'five-oclock', label: 'Clocked Out', desc: 'Make it to 5 PM', test: (s) => s.madeItToFive },
+  { id: 'monday-survivor', label: 'Monday Survivor', desc: 'Make it to 5 PM on a Monday', test: (s) => s.madeItToFive && s.difficulty === 'monday' },
+  { id: 'sharpshooter', label: 'Sharpshooter', desc: 'Close 20+ tickets with 100% accuracy', test: (s) => s.closed >= 20 && s.accuracy === 100 },
+  { id: 'inbox-zero', label: 'Inbox Zero at Noon', desc: 'An empty queue at 12:00', test: (s) => s.inboxZeroNoon },
+  { id: 'ceo-whisperer', label: 'CEO Whisperer', desc: 'Close 3 VIP tickets in one shift', test: (s) => s.vipsClosed >= 3 },
+  { id: 'on-a-roll', label: 'On a Roll', desc: 'A 15-ticket streak', test: (s) => s.bestStreak >= 15 },
+  { id: 'spam-hunter', label: 'Spam Hunter', desc: 'Flag 5 junk tickets in one shift', test: (s) => s.spamClosed >= 5 },
+  { id: 'night-shift', label: 'Night Shift', desc: 'Work a full hour of overtime', test: (s) => s.overtimeMs >= HOUR_MS },
+  { id: 'quick-draw', label: 'Quick Draw', desc: 'Close a ticket within 2 seconds', test: (s) => s.minCloseMs !== null && s.minCloseMs < 2000 },
+];
+
+/** Which achievements this shift earned. The caller keeps the lifetime set. */
+export function evaluateAchievements(s) {
+  return ACHIEVEMENTS.filter((a) => a.test(s)).map((a) => a.id);
 }
