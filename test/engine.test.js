@@ -537,7 +537,7 @@ test('machines walk in, take two fixes in order, and walk out', () => {
   const walkIns = events.filter((e) => e.type === 'spawn' && e.ticket.kind === 'repair');
   assert.ok(walkIns.length >= 1, 'someone should carry a machine in within two hours');
   for (const { ticket } of walkIns) {
-    assert.ok(['laptop', 'printer', 'phone', 'monitor'].includes(ticket.device));
+    assert.ok(['laptop', 'printer', 'phone', 'monitor', 'server', 'tv'].includes(ticket.device));
     assert.ok(ticket.stages.length >= 2);
     assert.ok(ticket.stages.every((f) => FIX_IDS.includes(f)));
     assert.equal(ticket.hint, true, 'walk-ins show their first step');
