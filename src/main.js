@@ -8,7 +8,7 @@ import { FIX_ICONS, POWER_ICONS, face, avatar, personSVG, roomSVG, deskSVG, repa
 import { inspectionFor, INSPECTION_ZONES } from './inspection.js';
 import { CHALLENGES, challengeFor, challengeBestKey, evidenceFor } from './challenges.js';
 import { createPractice, applyPracticeFix, nextPracticeCase } from './practice.js';
-import { initSecurityLab } from './security-ui.js';
+import { initSecurityDesk } from './security-ui.js';
 import { play, setMuted, isMuted, music } from './sound.js';
 
 const $ = (id) => document.getElementById(id);
@@ -22,7 +22,7 @@ $('repair-bench-art').innerHTML = repairBenchSVG();
 $('home-art').innerHTML = homeHeroSVG();
 const screens = { start: $('start-screen'), pause: $('pause-screen'), over: $('over-screen'), stats: $('stats-screen'), shop: $('shop-screen') };
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const securityLab = initSecurityLab();
+const securityDesk = initSecurityDesk({onPause:()=>pause(),onResolved:()=>{render();announce('Security incident resolved.');},onArrival:title=>{toast('Security report: '+title);announce('New security report: '+title);}});
 
 const FIXES = ENGINE_FIXES.map(f => ({ ...f, label: ({ restart: 'Restart safely', password: 'Recover access', connect: 'Check connection', update: 'Verified update', notit: 'Route / report' })[f.id] }));
 const SHORT = { restart: 'Restart', password: 'Access', connect: 'Connection', update: 'Update', notit: 'Route / report' };
@@ -108,7 +108,7 @@ function renderOnlineToggle() {
   btn.classList.toggle('on', onlinePref);
   $('online-sub').textContent = onlinePref
     ? 'On · alongside walk-ins'
-    : 'Off · walk-ins only';
+    : 'Off · repairs + security';
 }
 
 // --- the supply closet (shop) ----------------------------------------------------
@@ -408,7 +408,7 @@ function buildFaces() {
 // --- screens ----------------------------------------------------------------------
 
 function show(name) {
-  if (name !== 'play') closeInspection();
+  if (name !== 'play') { closeInspection(); securityDesk.close(); }
   app.dataset.screen = name;
   for (const [key, el] of Object.entries(screens)) el.hidden = key !== name;
   const focusTarget = { start: 'start-btn', pause: 'resume-btn', over: 'again-btn', stats: 'stats-back-btn', shop: 'shop-back-btn' }[name];
@@ -434,10 +434,11 @@ function startShift(newMode = 'free') {
   else if (mode === 'tutorial') game = createGame(randomSeed, DEFAULT_DIFFICULTY, 'tutorial');
   else if (mode === 'endless') game = createGame(randomSeed, activeChallenge.engine, 'endless', opts);
   else game = createGame(randomSeed, activeChallenge.engine, 'shift', opts);
+  securityDesk.begin({practice:mode==='practice',tutorial:mode==='tutorial',elapsed:game.t});
   app.dataset.session = mode;
   $('exam-running').textContent = mode === 'practice' ? 'No time limit. Inspect, try a repair, and learn from the result.' : 'The shift keeps running while you inspect.';
-  $('empty-big').textContent = game.online ? 'Inbox zero.' : 'Walk-ins only.';
-  $('empty-sub').textContent = game.online ? (mode === 'practice' ? 'Ready when you are. Choose Next case below.' : 'It won’t last.') : 'Your next repair is at the IT workbench.';
+  $('empty-big').textContent = game.online ? 'Inbox zero.' : 'Email is off.';
+  $('empty-sub').textContent = game.online ? (mode === 'practice' ? 'Ready when you are. Choose Next case below.' : 'It won’t last.') : 'Device repairs and security reports still arrive.';
   app.classList.toggle('overtime', mode === 'endless');
   coach(null);
   show('play');
@@ -450,6 +451,7 @@ function startShift(newMode = 'free') {
 
 /** Back to the start screen: clean floor, fresh HUD, no game. */
 function goHome() {
+  securityDesk.reset();
   running = false;
   game = null;
   delete app.dataset.session;
@@ -484,6 +486,7 @@ function pause() {
   if (!running) return;
   running = false;
   music.stop();
+  render();
   show('pause');
 }
 
@@ -496,6 +499,7 @@ function resume() {
 }
 
 function endShift() {
+  securityDesk.report();
   running = false;
   music.stop();
   coach(null);
@@ -1022,6 +1026,7 @@ function removeCard(id, cls, label) {
 
 function render() {
   if (!game) return;
+  if(game.phase==='playing') securityDesk.sync({elapsed:game.t,round:game.practiceRound||1,clock:clock(game.t),running});
   const focus = focusedTicket();
 
   for (const ticket of game.tickets) {
@@ -1072,7 +1077,8 @@ function render() {
   $('score').textContent = game.mode === 'practice' ? game.closed : game.score.toLocaleString();
   document.querySelector('.hud-score .hud-label').textContent = game.mode === 'practice' ? 'Completed' : 'Score';
   $('practice-bar').hidden = game.mode !== 'practice';
-  $('next-case-btn').disabled = game.tickets.length > 0;
+  $('next-case-btn').disabled = game.tickets.length > 0 || securityDesk.pendingCount() > 0;
+  $('practice-guidance').textContent = securityDesk.pendingCount() > 0 ? 'Resolve repairs and security to finish this round.' : game.tickets.length > 0 ? 'Finish your repairs to unlock the next round.' : 'Round complete. Ready for the next case?';
   const mult = multiplier(game.streak);
   const multEl = $('mult');
   multEl.hidden = mult === 1;
@@ -1150,7 +1156,7 @@ function frame(now) {
 // --- input ------------------------------------------------------------------------
 
 document.addEventListener('keydown', (e) => {
-  if (securityLab.isOpen()) return; // Native modal owns focus and Escape; never resume the background shift.
+  if (securityDesk.isOpen()) return; // Incident dialog owns focus, Escape and response controls.
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (examDialog.open) {
     if (e.key === 'Escape') { e.preventDefault(); closeInspection(); return; }

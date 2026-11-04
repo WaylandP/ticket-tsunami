@@ -4,7 +4,7 @@
 
 A cartoon IT support simulator inside a corporate IT department. Meet coworkers, inspect the
 devices they bring in, and work out the next repair from their complaint and the
-physical evidence. Handle email requests on your own workstation alongside them.
+physical evidence. Handle email requests and security incidents on your own workstation alongside them.
 
 ### ▶ [Play it now](https://ticket-tsunami.vercel.app)
 
@@ -41,7 +41,7 @@ home screen. There is no settings drawer to discover.
 - **Endless shift:** start in overtime. There is no scheduled finish, but patience
   and happiness still run down. Use Practice if you want no time pressure.
 
-Switch **Email tickets** off for walk-ins only. **Music** has Off, Auto, Slow,
+Switch **Email tickets** off to focus on device repairs and security reports. **Music** has Off, Auto, Slow,
 Medium, and Fast settings; all audio is synthesized live.
 
 ## Work at the desk
@@ -57,6 +57,9 @@ Medium, and Fast settings; all audio is synthesized live.
    until you close the workbench.
 4. Select email requests in the workstation inbox and use the same repair bar.
    Suspicious messages go to the reporting workflow; never follow their links.
+5. Investigate the **Security desk** report above your inbox. Inspect evidence,
+   choose the next safe action, and return to repairs. Your investigation keeps
+   its progress when you leave it.
 
 Timed play also has returning requests, familiar office regulars, a multi-stage
 projector incident, powers, upgrades, and career achievements. The queue meter
@@ -73,19 +76,32 @@ the system's reduced-motion preference.
 The scenarios teach the best next action for stated evidence, not a universal
 fix for every similar symptom. See the [case accuracy audit](docs/case-audit.md).
 
-## Cyber lab
+## Security is part of your shift
 
-Open **Cyber lab** from Home or Pause for six untimed investigations: phishing,
-MFA fatigue, unknown USB devices, ransomware containment, accidental sharing,
-and verified security updates. Inspect evidence before choosing a response.
-Each choice explains its consequence; unsafe choices allow another attempt.
-Completed cases and safe first decisions are saved in this browser.
+The **Security desk** is always visible above the workstation inbox. Your first
+incident arrives when you start a shift. Click its report to investigate, then
+return to the office; inspected evidence and response attempts stay with the case.
 
-The lab is separate from shift scoring and never resumes a paused shift. All
-messages, links and devices are fictional, inert training material.
-See [training sources and verification](docs/security-training.md).
+- **Practice:** each of the first six rounds pairs device work with a security
+  incident. Complete the round's repairs, email requests and incident to unlock
+  **Next case**. Later rounds continue with ordinary repair work.
+- **Timed, Daily and Endless:** another report arrives after 60 seconds of elapsed
+  shift time, with at most two unresolved incidents waiting and six total per shift.
+  The shift clock keeps moving during investigation. Use **Pause shift** for a break.
+- **Shift report:** see incidents resolved, open incidents handed off, and safe
+  first decisions alongside your existing repair results.
 
-![Cyber lab phishing investigation, captured from the running game](docs/security-desk-dark.jpg)
+Cases cover phishing, MFA fatigue, unknown USB devices, ransomware containment,
+accidental sharing and verified security updates. Inspect evidence before choosing
+a response; each choice explains its consequence and allows learning from mistakes.
+Security results are reported separately from existing repair points and happiness.
+The guided **How to play** repair tutorial is unchanged.
+
+All messages, links and devices are fictional, inert training material.
+See [integration and verification](docs/integrated-security.md) and
+[training sources](docs/security-training.md).
+
+![Security investigation opened from the active office](docs/security-desk-dark.jpg)
 
 Device inspections now show distinct physical fronts and backs. The laptop has
 a rear lid, hinges and side ports; unpowered hardware has no lit screen or
@@ -117,12 +133,13 @@ untimed practice controller is separate. The original engine file is unchanged.
 | src/tickets.js | Authored complaints, existing fix IDs, and repair sequences |
 | src/inspection.js | Read-only component findings for every repair stage |
 | src/security.js | Six defensive investigations and browser-local progress model |
-| src/security-ui.js | Cyber lab dialog, evidence, feedback, and keyboard focus |
+| src/security-shift.js | Incident arrivals, per-shift evidence, resolution and handoff totals |
+| src/security-ui.js | Workstation security feed, investigation, feedback, and keyboard focus |
 | src/challenges.js | Diagnosis levels, evidence presentation, and saved-level migration |
 | src/icons.js | Original inline SVG corporate office, coworkers, devices, and workbench art |
 | src/styles.css | Layout, themes, and animation |
 | src/sound.js | Synthesized audio |
-| test/ | Engine, inspection, challenge, and practice tests |
+| test/ | Engine, inspection, challenge, practice and security tests |
 
 See [design notes](docs/hands-on-design.md), [verification](docs/visual-verification.md),
 and [ROADMAP.md](ROADMAP.md).

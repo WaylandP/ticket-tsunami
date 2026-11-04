@@ -1,6 +1,10 @@
-# Device graphics and Cyber lab
+# Device graphics and security training
 
-Verified 2026-11-04. This update replaces generic inspection panels with device-specific
+The original graphics/training release was verified 2026-11-04. Its standalone
+Cyber lab has since been replaced by [integrated shift incidents](integrated-security.md).
+The content references below still apply.
+
+This original update replaces generic inspection panels with device-specific
 art and adds six standalone defensive training cases. All runtime artwork is inline
 SVG in `src/icons.js`, with themed styling in `src/styles.css`. The JPGs in this
 directory are documentation screenshots; the game loads no image assets.
@@ -20,7 +24,7 @@ directory are documentation screenshots; the game loads no image assets.
 - The inspection model adds read-only `physical` metadata. The existing catalog,
   required repairs, scoring, patience and timed engine are unchanged.
 
-## Cyber lab behavior
+## Original Cyber lab behavior (superseded)
 
 Home and Pause open the same native modal. Each case includes an illustrated
 artifact, three evidence cards and three response choices. Inspecting at least
@@ -49,7 +53,7 @@ organization's incident response process.
 | Accidental sharing | Restrict unauthorized access, preserve activity and report; avoid assumptions about scope. | [FTC data breach response](https://www.ftc.gov/business-guidance/resources/data-breach-response-guide-business) |
 | Security update | Verify the source and approval, use the managed package, and confirm the result. | [CISA software updates](https://www.cisa.gov/sites/default/files/2024-09/Secure-Our-World-Software-Updates-Tip-Sheet.pdf) |
 
-## Verification for this update
+## Verification for the original graphics/training release
 
 - `node --test`: **63 passed, 0 failed**. New coverage checks evidence gating,
   retries, completion, first-decision credit, persistence sanitization and

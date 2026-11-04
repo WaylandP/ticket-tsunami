@@ -2260,10 +2260,9 @@ kbd {
 .exam-view-switch button { min-height: 44px; }
 .exam-stage-caption { color: var(--muted); }
 
-/* Security desk: a self-contained, untimed training surface. */
+/* Security desk: investigations opened from the active workstation. */
 .cyber-launch { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .cyber-launch svg { width: 18px; height: 18px; flex: none; }
-.office-home .home-footer .cyber-launch { color: var(--accent); background: var(--accent-soft); border: 1px solid var(--line); border-radius: 8px; }
 .security-dialog { width: min(1180px, calc(100vw - 40px)); max-width: none; max-height: calc(100dvh - 40px); padding: 0; border: 1px solid var(--line); border-radius: 20px; color: var(--ink); background: var(--bg); box-shadow: 0 24px 80px var(--art-shadow); overflow: auto; overscroll-behavior: contain; }
 .security-dialog::backdrop { background: var(--art-shadow); backdrop-filter: blur(5px); }
 .security-shell { min-width: 0; }
@@ -2338,15 +2337,42 @@ kbd {
 @media (max-width: 900px) { .security-case-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }.security-workspace { gap: 17px; }.security-artifact-top { padding-inline: 10px; }.security-sim-tag { display: none; } }
 @media (max-width: 700px) {
   .exam-view-meta { margin: 10px 7px 3px; font-size: 10px; }.exam-view-meta span:last-child { font-size: 9px; }
-  .office-home .home-footer { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 3px; }
+  .office-home .home-footer { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 3px; }
   .office-home .home-footer .btn-link { min-width: 0; padding: 4px 1px; font-size: 10px; white-space: normal; line-height: 1.15; }
-  .office-home .home-footer .cyber-launch { flex-direction: column; gap: 2px; }.office-home .home-footer .cyber-launch svg { width: 15px; height: 15px; }
   .security-dialog { width: 100%; max-height: 100dvh; height: 100dvh; margin: 0; border: 0; border-radius: 0; }
   .security-header { padding: 14px 16px; gap: 8px 15px; flex-wrap: wrap; }.security-header .eyebrow { font-size: 8px; }.security-header h1 { font-size: 21px; }.security-header .icon-btn { margin-left: auto; width: 44px; height: 44px; }.security-progress-wrap { order: 3; width: 100%; display: flex; gap: 12px; align-items: center; font-size: 9px; }.security-progress-track { flex: 1; margin: 0; }
   #security-content { padding: 20px 16px; }#security-content h2 { font-size: 25px; }
   .security-intro { grid-template-columns: 1fr; gap: 0; margin-bottom: 22px; }.security-hero-art { display: none; }.security-intro p:not(.eyebrow) { font-size: 14px; }.security-training-note { font-size: 10px; line-height: 1.5; }
   .security-case-grid { gap: 10px; }.security-case-card { padding: 12px; }.security-case-card strong { font-size: 15px; }.security-case-index { font-size: 9px; }.security-card-top { margin-bottom: 5px; }.security-topic-icon { width: 30px; height: 30px; }.security-case-card .security-card-go { padding-top: 8px; }
   .security-case-heading { margin-bottom: 10px; }.security-scenario { font-size: 13px; margin-bottom: 18px; }.security-workspace { grid-template-columns: 1fr; gap: 22px; }.security-object svg { max-height: 115px; }.security-artifact-copy { padding: 14px; }.security-artifact-copy h3 { font-size: 17px; }.security-artifact-copy p { font-size: 13px; }.security-artifact-from { font-size: 10px !important; }.security-evidence-tabs { gap: 6px; }.security-evidence-btn { flex: 1; padding: 7px 8px; font-size: 11px; }.security-response { font-size: 13px; }.security-footnote { font-size: 10px; }
+}
+
+/* Security operations live on the workstation alongside incoming tickets. */
+.security-feed { flex: none; background: var(--surface); border-bottom: 1px solid var(--line); }
+.security-feed-heading { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 8px 12px; border: 0; border-bottom: 1px solid var(--line); background: var(--accent-soft); color: var(--accent); text-align: left; font: 10px var(--font-mono); }
+.security-feed-heading > svg { width: 20px; height: 20px; flex: none; }
+.security-live-count { margin-left: auto; font-weight: 700; }
+.security-resolved-count { color: var(--muted); }
+.security-incident-card { display: flex; gap: 10px; width: calc(100% - 16px); min-height: 76px; margin: 8px; padding: 10px; border: 1px solid var(--line); border-left: 3px solid var(--warn); border-radius: 9px; color: var(--ink); background: var(--surface-2); text-align: left; }
+.security-incident-card:hover { border-color: var(--accent); background: var(--accent-soft); }
+.security-reporter { flex: none; padding-top: 2px; }.security-reporter svg { width: 32px; height: 32px; }
+.security-incident-copy { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+.security-incident-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; color: var(--muted); font-size: 10px; }.security-incident-meta > span { color: var(--warn); }
+.security-incident-copy > strong { font-size: 14px; line-height: 1.25; }
+.security-incident-cta { color: var(--accent); font-size: 11px; font-weight: 700; }
+.security-clear { display: flex; align-items: center; gap: 9px; padding: 12px; min-height: 70px; }.security-clear > svg { width: 25px; height: 25px; color: var(--good); flex: none; }.security-clear > span { display: flex; flex-direction: column; gap: 3px; }.security-clear strong { font-size: 12px; }.security-clear span span { font-size: 11px; color: var(--muted); }
+.security-shift-clock { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 28px; background: var(--surface-2); border-bottom: 1px solid var(--line); color: var(--muted); font: 11px var(--font-mono); min-height: 45px; }
+.security-shift-clock button { min-height: 44px; color: var(--accent); }
+.security-shift-report { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--accent-soft); text-align: left; margin: 12px 0; }.security-shift-report p { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.office-home .home-art-caption { color: var(--accent); }
+@media (max-width:700px) {
+  .office-home .home-footer { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .security-feed-heading { padding: 6px 9px; gap: 6px; font-size: 9px; }.security-resolved-count { display: none; }
+  .security-incident-card { padding: 7px 8px; margin: 6px; width: calc(100% - 12px); min-height: 70px; gap: 7px; }.security-incident-copy > strong { font-size: 12px; }.security-incident-meta { font-size: 9px; }.security-reporter svg { width: 26px; height: 26px; }
+  .security-shift-clock { padding-inline:16px; font-size:10px; }
+  .workstation { min-height: 270px; }
+  .floor { overflow-y:auto; }
+  .practice-bar { position: sticky; bottom: 0; flex: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
