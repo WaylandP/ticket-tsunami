@@ -48,6 +48,9 @@
       <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path d="M12 3l10 18H2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="18" r="1.3" fill="currentColor"/></svg>
       <span><strong id="banner-title"></strong> <span id="banner-detail"></span></span>
     </div>
+    <div class="coach" id="coach" hidden>
+      <span id="coach-text"></span>
+    </div>
     <div class="empty" id="empty" hidden>
       <span class="empty-big">Inbox zero.</span>
       <span class="empty-sub">It won’t last.</span>
@@ -70,11 +73,39 @@
           <p class="diff-blurb" id="diff-blurb"></p>
         </div>
         <button type="button" class="btn btn-primary" id="start-btn">Start shift</button>
-        <button type="button" class="btn btn-ghost btn-daily" id="daily-btn">
-          <span class="daily-title">🌊 Daily Shift · <span id="daily-date"></span></span>
-          <span class="daily-sub" id="daily-sub">The same storm for everyone. One try.</span>
-        </button>
+        <div class="mode-row">
+          <button type="button" class="btn btn-ghost btn-mode" id="daily-btn">
+            <span class="mode-title">🌊 Daily · <span id="daily-date"></span></span>
+            <span class="mode-sub" id="daily-sub">Same storm for everyone. One try.</span>
+          </button>
+          <button type="button" class="btn btn-ghost btn-mode" id="endless-btn">
+            <span class="mode-title">🌙 Night Shift</span>
+            <span class="mode-sub">Start at 5 PM. Survive.</span>
+          </button>
+        </div>
+        <div class="music-wrap">
+          <p class="hud-label" id="music-label">Lofi radio</p>
+          <div class="music" id="music" role="group" aria-labelledby="music-label"></div>
+        </div>
+        <p class="links-row">
+          <button type="button" class="btn-link" id="tutorial-btn">First day? Take the training</button>
+          <span class="dot" aria-hidden="true">·</span>
+          <button type="button" class="btn-link" id="stats-btn">Your career</button>
+        </p>
         <p class="best" id="best-line" hidden></p>
+      </div>
+    </section>
+
+    <section class="overlay" id="stats-screen" aria-labelledby="stats-title" hidden>
+      <div class="card report">
+        <p class="eyebrow">Employee file</p>
+        <h2 id="stats-title" class="title-sm">Your career</h2>
+        <dl class="stats" id="career-stats"></dl>
+        <div class="daily-history">
+          <p class="hud-label">Recent dailies</p>
+          <ul class="history-list" id="daily-history"></ul>
+        </div>
+        <button type="button" class="btn btn-primary" id="stats-back-btn">Back</button>
       </div>
     </section>
 
@@ -101,6 +132,7 @@
           <div><dt>Fixed it themselves</dt><dd id="r-self"></dd></div>
         </dl>
         <p class="newbest" id="r-newbest" hidden>New personal best</p>
+        <ul class="insights" id="r-insights" hidden></ul>
         <div class="badges" id="r-badges" hidden></div>
         <p class="badge-count" id="r-badge-count" hidden></p>
         <div class="report-actions">
