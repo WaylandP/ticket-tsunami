@@ -44,6 +44,7 @@ function note({ type = 'sine', from = 440, to = from, at = 0, dur = 0.12, peak =
 
 const SOUNDS = {
   spawn: () => note({ from: 320, to: 240, dur: 0.08, peak: 0.5 }),
+  knock: () => [0, 0.16].forEach((at) => note({ type: 'square', from: 180, to: 140, at, dur: 0.07, peak: 0.5 })),
   correct: () => {
     note({ type: 'triangle', from: 660, dur: 0.09, peak: 0.8 });
     note({ type: 'triangle', from: 990, at: 0.07, dur: 0.12, peak: 0.6 });

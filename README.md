@@ -38,6 +38,11 @@ swinging in overtime.
 - Learn the **regulars**: Gary is always locked out, Frank's connection is
   always down, and Jules the intern usually figures it out alone. On Mondays,
   the projector dies before the all-hands — a **three-step boss ticket**.
+- Now and then someone **walks in carrying the machine** — a smoking laptop, a
+  jammed printer, a cracked phone, a monitor with no signal. Walk-in repairs
+  take two fixes in the right order, like treating a patient, and pay extra.
+- Every sender has a **face**: generated avatars for the whole office, custom
+  looks for the regulars and the CEO, and a fish on the hook for phishing.
 - Eleven **achievements** to unlock, "notes from your manager" after every
   shift, and an **employee file** tracking your whole career.
 - First day? There's a 90-second **training** on the start screen.

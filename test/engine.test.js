@@ -422,17 +422,17 @@ test('an empty queue at noon is noticed', () => {
   assert.equal(busy.inboxZeroNoon, false);
 });
 
-test('achievements: all eleven are earnable and the fresh game earns none', () => {
-  assert.equal(ACHIEVEMENTS.length, 11);
-  assert.equal(new Set(ACHIEVEMENTS.map((a) => a.id)).size, 11);
+test('achievements: all twelve are earnable and the fresh game earns none', () => {
+  assert.equal(ACHIEVEMENTS.length, 12);
+  assert.equal(new Set(ACHIEVEMENTS.map((a) => a.id)).size, 12);
   assert.deepEqual(evaluateAchievements(summary(createGame(1))), []);
   const everything = {
     ...summary(createGame(1, 'monday')),
     closed: 25, accuracy: 100, madeItToFive: true, inboxZeroNoon: true,
     vipsClosed: 3, bestStreak: 16, spamClosed: 5, overtimeMs: HOUR_MS, minCloseMs: 900,
-    bossesClosed: 1,
+    bossesClosed: 1, repairsClosed: 3,
   };
-  assert.equal(evaluateAchievements(everything).length, 11, 'a perfect Monday earns all eleven');
+  assert.equal(evaluateAchievements(everything).length, 12, 'a perfect Monday earns all twelve');
 });
 
 test('the tutorial serves five guided tickets, one per fix, then ends', () => {
@@ -530,6 +530,25 @@ test('the shift report has honest observations', () => {
   assert.equal(g.confusions[`${wrongFix}>${t.fix}`], 1);
   applyFix(g, t.id, t.fix);
   assert.ok(summary(g).avgCloseMs !== null);
+});
+
+test('machines walk in, take two fixes in order, and walk out', () => {
+  const { game, events } = autoplay(11, 120_000);
+  const walkIns = events.filter((e) => e.type === 'spawn' && e.ticket.kind === 'repair');
+  assert.ok(walkIns.length >= 1, 'someone should carry a machine in within two hours');
+  for (const { ticket } of walkIns) {
+    assert.ok(['laptop', 'printer', 'phone', 'monitor'].includes(ticket.device));
+    assert.ok(ticket.stages.length >= 2);
+    assert.ok(ticket.stages.every((f) => FIX_IDS.includes(f)));
+    assert.equal(ticket.hint, true, 'walk-ins show their first step');
+  }
+  assert.ok(game.repairsClosed >= 1, 'perfect play fixes them stage by stage');
+  // A repair pays more than a plain ticket of the same freshness.
+  const plain = (() => { const g = createGame(5); const t = plant(g); return applyFix(g, t.id, t.fix).points; })();
+  const g = createGame(5);
+  const r = plant(g, { kind: 'repair', device: 'laptop', stages: ['connect', 'restart'], stage: 1, fix: 'restart' });
+  assert.ok(applyFix(g, r.id, 'restart').points > plain);
+  assert.equal(g.repairsClosed, 1);
 });
 
 test('the five fixes are distinct and mapped to keys 1-5', () => {
