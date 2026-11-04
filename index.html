@@ -51,34 +51,26 @@
     <div class="coach" id="coach" hidden>
       <span id="coach-text"></span>
     </div>
-    <div class="scenery" aria-hidden="true">
-      <svg class="scene scene-left" viewBox="0 0 150 100">
-        <rect x="18" y="52" width="86" height="8" rx="2" fill="var(--muted)" opacity=".55"/>
-        <path d="M26 60v34M94 60v34" stroke="var(--muted)" stroke-width="5" opacity=".55"/>
-        <rect x="38" y="24" width="38" height="26" rx="2.5" fill="var(--surface-2)" stroke="var(--muted)" stroke-width="3"/>
-        <path d="M52 50v4m10-4v4M48 56h18" stroke="var(--muted)" stroke-width="3"/>
-        <path d="M126 56c-7-2-10-9-7-16 5 4 7 8 7 16zM126 56c7-2 10-9 7-16-5 4-7 8-7 16zM126 58c0-10 1-17 0-24" stroke="var(--good)" stroke-width="3" fill="none"/>
-        <path d="M118 58h16l-2.5 18h-11z" fill="var(--surface-2)" stroke="var(--muted)" stroke-width="3"/>
-      </svg>
-      <svg class="scene scene-right" viewBox="0 0 150 100">
-        <rect x="14" y="26" width="44" height="68" rx="3" fill="var(--surface-2)" stroke="var(--muted)" stroke-width="3"/>
-        <path d="M20 44h32M20 66h32M32 35h8m-8 22h8m-8 22h8" stroke="var(--muted)" stroke-width="3"/>
-        <rect x="80" y="52" width="56" height="26" rx="4" fill="var(--surface-2)" stroke="var(--muted)" stroke-width="3"/>
-        <path d="M90 52v-9h36v9" fill="none" stroke="var(--muted)" stroke-width="3"/>
-        <rect x="88" y="60" width="22" height="4" rx="2" fill="var(--muted)"/>
-        <circle cx="128" cy="64" r="3" fill="var(--danger)" opacity=".8"/>
-        <path d="M80 86h56" stroke="var(--muted)" stroke-width="4" opacity=".55"/>
-      </svg>
-    </div>
-    <div class="walkins-wrap" id="bench-wrap" hidden>
+    <div class="scenery" id="room-art" aria-hidden="true"></div>
+    <div class="walkins-wrap" id="bench-wrap">
+      <span class="counter-label">REPAIR RECEPTION <span>Take a breath. Take a number.</span></span>
       <ol class="walkins" id="bench" aria-label="Walk-in repairs"></ol>
-      <div class="counter" aria-hidden="true"></div>
+      <div class="counter" aria-hidden="true"><span>WALK-IN CARE</span><span>01 &nbsp; ✚ &nbsp; 02</span></div>
     </div>
-    <div class="empty" id="empty" hidden>
-      <span class="empty-big" id="empty-big">Inbox zero.</span>
-      <span class="empty-sub" id="empty-sub">It won’t last.</span>
-    </div>
-    <ol class="queue" id="queue" aria-label="Open tickets"></ol>
+    <section class="workstation" aria-label="Your workstation">
+      <div class="monitor-frame">
+        <div class="monitor-toolbar"><span class="monitor-led" aria-hidden="true"></span><strong>MY INBOX</strong><span id="inbox-status">All quiet. Suspicious.</span></div>
+        <div class="inbox-screen">
+          <div class="empty" id="empty" hidden>
+            <span class="empty-big" id="empty-big">Inbox zero.</span>
+            <span class="empty-sub" id="empty-sub">It won’t last.</span>
+          </div>
+          <ol class="queue" id="queue" aria-label="Open tickets"></ol>
+        </div>
+        <div class="monitor-chin" aria-hidden="true">TICKET TSUNAMI <span>●</span></div>
+      </div>
+      <div class="desk-scene" id="desk-art" aria-hidden="true"></div>
+    </section>
 
     <section class="overlay overlay-start" id="start-screen" aria-labelledby="start-title">
       <div class="start-layout">
