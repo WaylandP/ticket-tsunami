@@ -81,3 +81,14 @@ export const NAMES = [
   'Beth in Recruiting', 'Sam from Facilities', 'Nia in Product', 'Gary (it’s always Gary)', 'Mei in Data',
   'Carlos in Sales', 'Hannah from the 3rd floor', 'Ravi in Engineering', 'Zoe in Payroll', 'Frank, remote',
 ];
+
+// Junk mail. The right answer is always "Not an IT problem", closing one pays
+// a bonus, and letting one rot costs nothing — recognizing them is the skill.
+export const SPAM = [
+  { text: 'CONGRATS!!! You won a free tablet. Claim it in the next 10 minutes!!', from: 'Totally Legit Prizes' },
+  { text: 'Your paycheck is ON HOLD. Verify your login at pay-roll-fix.example', from: 'Payroll “Support”' },
+  { text: 'I am a prince with 94 laptops to give away. Reply with your password.', from: 'A Generous Stranger' },
+  { text: 'FINAL NOTICE: your printer warranty expires TODAY. Act now!!!', from: 'Warranty Central' },
+  { text: 'We noticed you own a computer. Click here to make it 600% faster.', from: 'speedy-pc-deals.example' },
+  { text: 'Exclusive webinar: Synergize Your Workflow. Only 9,999 seats left.', from: 'The Webinar People' },
+];
