@@ -186,7 +186,11 @@ kbd {
 .hud-csat  { grid-area: csat; }
 .hud-queue { grid-area: queue; justify-self: end; text-align: right; }
 .hud-score { grid-area: score; text-align: right; }
-#pause-btn { grid-area: pause; }
+.hud-btns  { grid-area: pause; display: flex; gap: 6px; }
+
+#mute-btn:not(.muted) .slash { display: none; }
+#mute-btn.muted .wave { display: none; }
+#mute-btn.muted { color: var(--muted); }
 
 .hud-label {
   display: block;
@@ -450,6 +454,24 @@ kbd {
   border: 1px solid var(--vip);
 }
 
+.chip-spam {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px dashed var(--danger);
+}
+
+.chip-re {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+@media (prefers-color-scheme: light) {
+  .chip-re { color: #0a586f; }
+}
+
+.ticket.spam .ticket-btn { border-style: dashed; }
+
 .ticket-text { font-size: 16px; }
 
 .ticket-hint {
@@ -592,6 +614,71 @@ kbd {
 
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* --- frenzy: something is on fire ------------------------------------------------------ */
+
+.frenzy .floor {
+  background-image:
+    linear-gradient(180deg, rgba(255, 120, 40, 0.07), transparent 30%, var(--water-1)),
+    radial-gradient(var(--dot) 1px, transparent 1.5px);
+}
+
+.frenzy .score { color: var(--warn); }
+
+/* --- the dock: power-ups + fix bar ----------------------------------------------------- */
+
+.powers {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: min(660px, 100%);
+  margin: 0 auto;
+  padding: 8px 12px 0;
+}
+
+.charge-chip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.charge-chip.has-charge {
+  background: var(--vip-soft);
+  border-color: var(--vip);
+  color: var(--vip);
+}
+
+.power-btns { display: flex; gap: 6px; }
+
+.power-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.power-btn:disabled { opacity: 0.45; cursor: default; }
+.power-btn:not(:disabled):hover { border-color: var(--accent); }
+.power-emoji { font-size: 16px; }
+
+@media (max-width: 460px) {
+  .power-btn .power-label, .power-btn kbd { display: none; }
+  .power-btn { padding: 6px 13px; }
+  .power-emoji { font-size: 18px; }
+}
+
 /* --- fix bar ------------------------------------------------------------------------- */
 
 .fixes {
@@ -604,10 +691,11 @@ kbd {
   padding-bottom: calc(10px + env(safe-area-inset-bottom));
 }
 
-/* the fix bar only works mid-shift; make that visible */
-.app:not([data-screen='play']) .fixes { pointer-events: none; }
-.app:not([data-screen='play']) .fix { opacity: 0.45; }
-.fix { transition: opacity 0.25s ease; }
+/* the dock only works mid-shift; make that visible */
+.app:not([data-screen='play']) .dock { pointer-events: none; }
+.app:not([data-screen='play']) .fix,
+.app:not([data-screen='play']) .powers { opacity: 0.45; }
+.fix, .powers { transition: opacity 0.25s ease; }
 
 .fix {
   display: flex;
@@ -810,6 +898,30 @@ kbd {
   color: var(--muted);
 }
 
+/* the daily shift button */
+
+.btn-daily {
+  display: grid;
+  gap: 2px;
+  min-height: 56px;
+  padding: 9px 16px;
+}
+
+.daily-title { font-weight: 700; }
+
+.daily-sub {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.btn-daily:disabled {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.btn-daily:disabled:hover { border-color: var(--line); color: var(--ink); }
+
 /* shift report */
 
 .rank {
@@ -863,6 +975,36 @@ kbd {
   margin: 0;
   font-weight: 700;
   color: var(--good);
+}
+
+/* achievements */
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.badge {
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--vip-soft);
+  color: var(--vip);
+  border: 1px solid var(--vip);
+}
+
+.badge-new {
+  background: var(--vip);
+  color: var(--surface);
+}
+
+.badge-count {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .report-actions {

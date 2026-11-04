@@ -27,9 +27,14 @@
       <span class="hud-label">Score</span>
       <span class="score-row"><span class="score" id="score">0</span><span class="mult" id="mult" hidden>x1</span></span>
     </div>
-    <button type="button" class="icon-btn" id="pause-btn" aria-label="Pause">
-      <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><rect x="6" y="5" width="4" height="14" rx="1.5" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.5" fill="currentColor"/></svg>
-    </button>
+    <div class="hud-btns">
+      <button type="button" class="icon-btn" id="mute-btn" aria-label="Mute sound" aria-pressed="false">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" stroke="none"/><path class="wave" d="M15.5 9.5a4 4 0 0 1 0 5"/><path class="wave" d="M17.5 7.5a7 7 0 0 1 0 9"/><path class="slash" d="M15 9.5l5 5M20 9.5l-5 5"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="pause-btn" aria-label="Pause">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><rect x="6" y="5" width="4" height="14" rx="1.5" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.5" fill="currentColor"/></svg>
+      </button>
+    </div>
     <div class="hud-queue">
       <span class="hud-label">Queue</span>
       <span class="pips" id="pips" aria-hidden="true"></span>
@@ -65,6 +70,10 @@
           <p class="diff-blurb" id="diff-blurb"></p>
         </div>
         <button type="button" class="btn btn-primary" id="start-btn">Start shift</button>
+        <button type="button" class="btn btn-ghost btn-daily" id="daily-btn">
+          <span class="daily-title">🌊 Daily Shift · <span id="daily-date"></span></span>
+          <span class="daily-sub" id="daily-sub">The same storm for everyone. One try.</span>
+        </button>
         <p class="best" id="best-line" hidden></p>
       </div>
     </section>
@@ -92,6 +101,8 @@
           <div><dt>Fixed it themselves</dt><dd id="r-self"></dd></div>
         </dl>
         <p class="newbest" id="r-newbest" hidden>New personal best</p>
+        <div class="badges" id="r-badges" hidden></div>
+        <p class="badge-count" id="r-badge-count" hidden></p>
         <div class="report-actions">
           <button type="button" class="btn btn-primary" id="again-btn">Work another shift</button>
           <button type="button" class="btn btn-ghost" id="share-btn">Copy results</button>
@@ -101,7 +112,13 @@
     </section>
   </main>
 
-  <nav class="fixes" id="fixes" aria-label="Fixes"></nav>
+  <div class="dock">
+    <div class="powers" aria-label="Power-ups">
+      <span class="charge-chip" id="charge-chip" title="Every 10-ticket streak earns a charge">⚡ 0</span>
+      <div class="power-btns" id="powers"></div>
+    </div>
+    <nav class="fixes" id="fixes" aria-label="Fixes"></nav>
+  </div>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
