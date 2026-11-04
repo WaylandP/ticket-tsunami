@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   FIXES, FIX_IDS, HOUR_MS, SHIFT_MS, MAX_QUEUE, MAX_CSAT,
   DIFFICULTIES, DEFAULT_DIFFICULTY, difficultyFor,
-  POWERS, ACHIEVEMENTS, usePower, evaluateAchievements,
+  POWERS, ACHIEVEMENTS, TUTORIAL_FIXES, usePower, evaluateAchievements, shiftInsights,
   createGame, tick, applyFix, mostUrgent, multiplier, clock, rankFor,
   spawnInterval, patienceFor, shiftProgress, summary,
 } from '../src/engine.js';
@@ -422,16 +422,114 @@ test('an empty queue at noon is noticed', () => {
   assert.equal(busy.inboxZeroNoon, false);
 });
 
-test('achievements: all ten are earnable and the fresh game earns none', () => {
-  assert.equal(ACHIEVEMENTS.length, 10);
-  assert.equal(new Set(ACHIEVEMENTS.map((a) => a.id)).size, 10);
+test('achievements: all eleven are earnable and the fresh game earns none', () => {
+  assert.equal(ACHIEVEMENTS.length, 11);
+  assert.equal(new Set(ACHIEVEMENTS.map((a) => a.id)).size, 11);
   assert.deepEqual(evaluateAchievements(summary(createGame(1))), []);
   const everything = {
     ...summary(createGame(1, 'monday')),
     closed: 25, accuracy: 100, madeItToFive: true, inboxZeroNoon: true,
     vipsClosed: 3, bestStreak: 16, spamClosed: 5, overtimeMs: HOUR_MS, minCloseMs: 900,
+    bossesClosed: 1,
   };
-  assert.equal(evaluateAchievements(everything).length, 10, 'a perfect Monday earns all ten');
+  assert.equal(evaluateAchievements(everything).length, 11, 'a perfect Monday earns all eleven');
+});
+
+test('the tutorial serves five guided tickets, one per fix, then ends', () => {
+  const g = createGame(1, DEFAULT_DIFFICULTY, 'tutorial');
+  const seen = [];
+  const events = [];
+  for (let ms = 0; ms < 60_000 && g.phase === 'playing'; ms += 100) {
+    for (const ev of tick(g, 100)) {
+      events.push(ev);
+      if (ev.type === 'spawn') {
+        assert.equal(g.tickets.length, 1, 'tutorial tickets arrive one at a time');
+        assert.equal(ev.ticket.hint, true, 'tutorial tickets always show their tip');
+        seen.push(ev.ticket.fix);
+        assert.equal(applyFix(g, ev.ticket.id, ev.ticket.fix).type, 'correct');
+      }
+    }
+  }
+  assert.deepEqual(seen, TUTORIAL_FIXES, 'one ticket per fix, in keyboard order');
+  assert.ok(events.some((e) => e.type === 'tutorialDone'));
+  assert.equal(g.phase, 'over');
+  for (const e of events) {
+    assert.ok(!['outage', 'frenzy'].includes(e.type), 'the tutorial room stays quiet');
+  }
+  assert.equal(summary(g).mode, 'tutorial');
+});
+
+test('the Night Shift starts at 5 PM at full heat', () => {
+  const g = createGame(9, 'monday', 'endless');
+  assert.equal(clock(g.t), '5:00 PM');
+  assert.equal(summary(g).madeItToFive, true);
+  const events = tick(g, 1500);
+  assert.ok(events.some((e) => e.type === 'spawn'), 'tickets arrive immediately');
+  const { game } = autoplay(13, 30_000, 50, 'monday');
+  assert.ok(game.t > 0, 'sanity');
+});
+
+test('Mondays bring a three-step boss ticket', () => {
+  const { game, events } = autoplay(11, 120_000, 50, 'monday');
+  const boss = events.find((e) => e.type === 'spawn' && e.ticket.kind === 'boss');
+  assert.ok(boss, 'the projector dies around 70s into a Monday');
+  assert.equal(game.bossesClosed, 1, 'perfect play walks through the stages');
+  const calm = autoplay(11, 120_000, 50, 'friday');
+  assert.ok(!calm.events.some((e) => e.type === 'spawn' && e.ticket.kind === 'boss'), 'no boss on a Friday');
+});
+
+test('boss mechanics: stages advance in order, wrong answers still hurt', () => {
+  const g = createGame(5);
+  const boss = plant(g, { kind: 'boss', stages: ['connect', 'restart', 'update'], stage: 0, fix: 'connect', patience: 50_000 });
+  // Wrong fix: normal penalty, stage stays.
+  const wrong = applyFix(g, boss.id, 'password');
+  assert.equal(wrong.type, 'wrong');
+  assert.equal(boss.stage, 0);
+  // Right fixes, in order.
+  const p1 = applyFix(g, boss.id, 'connect');
+  assert.equal(p1.type, 'progress');
+  assert.equal(boss.fix, 'restart', 'the hint now points at the next step');
+  assert.equal(applyFix(g, boss.id, 'restart').type, 'progress');
+  const done = applyFix(g, boss.id, 'update');
+  assert.equal(done.type, 'correct');
+  assert.ok(done.points >= 300, `a boss pays big, got ${done.points}`);
+  assert.equal(g.bossesClosed, 1);
+});
+
+test('regulars have habits: Gary, Frank and Jules', () => {
+  let gary = 0, frank = 0, jules = 0, julesSelf = 0;
+  for (const seed of [1, 2, 3, 4, 5, 6]) {
+    const { events } = autoplay(seed, 140_000);
+    for (const e of events) {
+      if (e.type !== 'spawn') continue;
+      if (e.ticket.from === 'Gary (it’s always Gary)') { gary++; assert.equal(e.ticket.fix, 'password', 'Gary is always locked out'); }
+      if (e.ticket.from === 'Frank, remote') { frank++; assert.equal(e.ticket.fix, 'connect', 'Frank is always the connection'); }
+      if (e.ticket.from === 'Jules the intern') { jules++; if (e.ticket.selfFixAt !== null) julesSelf++; }
+    }
+  }
+  assert.ok(gary >= 2 && frank >= 2 && jules >= 2, `regulars should show up (gary ${gary}, frank ${frank}, jules ${jules})`);
+  assert.ok(julesSelf / jules >= 0.3, `Jules usually self-fixes (${julesSelf}/${jules})`);
+});
+
+test('the shift report has honest observations', () => {
+  const base = summary(createGame(1));
+  assert.deepEqual(shiftInsights(base), [], 'a fresh shift has nothing to say');
+  const messy = { ...base, confusions: { 'restart>connect': 3 }, spamMissed: 2, expired: 4 };
+  const notes = shiftInsights(messy);
+  assert.equal(notes.length, 3, 'never more than three notes');
+  assert.match(notes[0], /Restart it.*Check connection.*3 times/);
+  assert.match(notes[1], /Junk mail fooled you 2 times/);
+  const flawless = { ...base, closed: 12, accuracy: 100, avgCloseMs: 2100 };
+  assert.ok(shiftInsights(flawless).some((n) => n.includes('Not one wrong fix')));
+  // And the tracking that feeds it:
+  const g = createGame(5);
+  tick(g, 1000);
+  const t = g.tickets[0];
+  const wrongFix = FIX_IDS.find((id) => id !== t.fix);
+  applyFix(g, t.id, wrongFix);
+  assert.equal(g.confusions[`${wrongFix}>${t.fix}`], 1);
+  applyFix(g, t.id, t.fix);
+  assert.ok(summary(g).avgCloseMs !== null);
 });
 
 test('the five fixes are distinct and mapped to keys 1-5', () => {

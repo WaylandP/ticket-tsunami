@@ -77,9 +77,9 @@ export const TICKETS = [
 
 export const NAMES = [
   'Priya in Sales', 'Marcus in Finance', 'Dana from HR', 'Leo in Marketing', 'Aisha in Legal',
-  'Tom from Ops', 'Rosa in Design', 'Ken in Accounting', 'Jules the intern', 'Omar in Support',
-  'Beth in Recruiting', 'Sam from Facilities', 'Nia in Product', 'Gary (it’s always Gary)', 'Mei in Data',
-  'Carlos in Sales', 'Hannah from the 3rd floor', 'Ravi in Engineering', 'Zoe in Payroll', 'Frank, remote',
+  'Tom from Ops', 'Rosa in Design', 'Ken in Accounting', 'Omar in Support',
+  'Beth in Recruiting', 'Sam from Facilities', 'Nia in Product', 'Mei in Data',
+  'Carlos in Sales', 'Hannah from the 3rd floor', 'Ravi in Engineering', 'Zoe in Payroll',
 ];
 
 // Junk mail. The right answer is always "Not an IT problem", closing one pays
@@ -91,4 +91,12 @@ export const SPAM = [
   { text: 'FINAL NOTICE: your printer warranty expires TODAY. Act now!!!', from: 'Warranty Central' },
   { text: 'We noticed you own a computer. Click here to make it 600% faster.', from: 'speedy-pc-deals.example' },
   { text: 'Exclusive webinar: Synergize Your Workflow. Only 9,999 seats left.', from: 'The Webinar People' },
+];
+
+// Regulars you get to know. Learn their habits and you can close their
+// tickets without reading them — that's the whole point.
+export const REGULARS = [
+  { name: 'Gary (it\u2019s always Gary)', fix: 'password' }, // locked out, every time
+  { name: 'Frank, remote', fix: 'connect' }, // it's always the connection
+  { name: 'Jules the intern', selfFix: true }, // usually figures it out alone
 ];

@@ -2,7 +2,7 @@
 // time comes in through tick(dt) and randomness from a seeded generator,
 // so a game can be replayed exactly and tested in Node.
 
-import { TICKETS, NAMES, SPAM } from './tickets.js';
+import { TICKETS, NAMES, SPAM, REGULARS } from './tickets.js';
 
 export const FIXES = [
   { id: 'restart', label: 'Restart it', key: '1' },
@@ -79,6 +79,7 @@ export const DIFFICULTIES = [
     spawn: { start: 3000, end: 1000, min: 380, overtime: 0.6 },
     patience: { start: 14_000, end: 8000, min: 3800, overtime: 0.35 },
     outage: { first: 45_000, gapMin: 35_000, gapMax: 55_000, size: 3 },
+    boss: true, // Mondays get the three-step projector ticket
   },
 ];
 
@@ -123,13 +124,25 @@ export function rankFor(score) {
 
 // --- game ----------------------------------------------------------------------
 
-export function createGame(seed = 1, difficulty = DEFAULT_DIFFICULTY) {
+/** The training script: one guided ticket per fix, in keyboard order. */
+export const TUTORIAL_FIXES = ['restart', 'password', 'connect', 'update', 'notit'];
+const firstTicketOf = (fix) => TICKETS.findIndex((t) => t.fix === fix);
+
+/**
+ * @param mode 'shift' (a normal 9-to-5), 'tutorial' (five guided tickets,
+ *   nothing else happens), or 'endless' (the Night Shift: start at 5 PM at
+ *   full heat and survive as long as you can).
+ */
+export function createGame(seed = 1, difficulty = DEFAULT_DIFFICULTY, mode = 'shift') {
+  const diff = difficultyFor(difficulty);
+  const start = mode === 'endless' ? SHIFT_MS : 0;
   return {
     seed,
-    difficulty: difficultyFor(difficulty).id,
+    mode,
+    difficulty: diff.id,
     rng: seed | 0,
     phase: 'playing', // 'playing' | 'over'
-    t: 0,
+    t: start,
     score: 0,
     csat: MAX_CSAT,
     streak: 0,
@@ -141,17 +154,23 @@ export function createGame(seed = 1, difficulty = DEFAULT_DIFFICULTY) {
     selfFixed: 0,
     vipsClosed: 0,
     spamClosed: 0,
+    spamMissed: 0,
     reopens: 0,
+    bossesClosed: 0,
+    bossSpawned: false,
     minCloseMs: null,
+    totalCloseMs: 0,
+    confusions: {}, // "tried>needed" -> count, for the shift insights
     inboxZeroNoon: false,
     charges: 0, // power-up charges, earned every 10-ticket streak
     slowUntil: 0, // coffee break: the world slows until then
     frenzyUntil: 0, // printer fire: double points until then
-    nextFrenzy: 60_000,
+    nextFrenzy: start + (mode === 'endless' ? 45_000 : 60_000),
+    tutorialStep: 0,
     tickets: [],
     nextId: 1,
-    nextSpawn: 900,
-    nextOutage: difficultyFor(difficulty).outage.first,
+    nextSpawn: start + (mode === 'tutorial' ? 600 : 900),
+    nextOutage: start + (mode === 'endless' ? 28_000 : diff.outage.first),
     pending: [], // scheduled spawns: { at, fix } or { at, reopen }
     lastTemplate: -1,
   };
@@ -197,7 +216,13 @@ function spawnReopen(game, events, r) {
 }
 
 function makeTicket(game, fix) {
-  const pool = fix ? TICKETS.map((x, i) => [x, i]).filter(([x]) => x.fix === fix) : TICKETS.map((x, i) => [x, i]);
+  const diff = difficultyFor(game.difficulty);
+  const vip = game.t > 30_000 && !fix && rand(game) < diff.vipChance;
+  // A regular with a signature problem? Learn their habits.
+  const regular = !vip && !fix && game.t > 15_000 && rand(game) < 0.18 ? pick(game, REGULARS) : null;
+  const wantFix = fix || (regular && regular.fix) || null;
+
+  const pool = wantFix ? TICKETS.map((x, i) => [x, i]).filter(([x]) => x.fix === wantFix) : TICKETS.map((x, i) => [x, i]);
   const open = new Set(game.tickets.map((tk) => tk.template));
   let choice = pick(game, pool);
   for (let tries = 0; tries < 6 && (open.has(choice[1]) || choice[1] === game.lastTemplate); tries++) {
@@ -206,11 +231,11 @@ function makeTicket(game, fix) {
   const [tpl, index] = choice;
   game.lastTemplate = index;
 
-  const diff = difficultyFor(game.difficulty);
-  const vip = game.t > 30_000 && !fix && rand(game) < diff.vipChance;
   const patience = patienceFor(game.t, diff) * (vip ? 0.7 : 1);
   // Now and then a user fixes it themselves before you get there.
-  const selfFixAt = !vip && game.t > 20_000 && rand(game) < 0.06 ? patience * lerp(0.35, 0.6, rand(game)) : null;
+  // Jules the intern does it half the time.
+  const selfChance = regular && regular.selfFix ? 0.5 : 0.06;
+  const selfFixAt = !vip && game.t > 20_000 && rand(game) < selfChance ? patience * lerp(0.35, 0.6, rand(game)) : null;
 
   return {
     id: game.nextId++,
@@ -218,7 +243,7 @@ function makeTicket(game, fix) {
     kind: 'normal',
     fix: tpl.fix,
     text: tpl.text,
-    from: vip ? 'The CEO' : pick(game, NAMES),
+    from: vip ? 'The CEO' : regular ? regular.name : pick(game, NAMES),
     vip,
     age: 0,
     patience,
@@ -290,6 +315,27 @@ export function tick(game, dt) {
     if (game.phase !== 'playing') return events;
   }
 
+  // The tutorial is a quiet room: one guided ticket at a time, nothing else.
+  if (game.mode === 'tutorial') {
+    if (game.tutorialStep < TUTORIAL_FIXES.length && game.tickets.length === 0 && game.t >= game.nextSpawn) {
+      const fix = TUTORIAL_FIXES[game.tutorialStep];
+      const index = firstTicketOf(fix);
+      const ticket = {
+        id: game.nextId++, template: index, kind: 'normal', fix,
+        text: TICKETS[index].text, from: pick(game, NAMES), vip: false,
+        age: 0, patience: 60_000, selfFixAt: null, hint: true,
+      };
+      game.tickets.push(ticket);
+      game.tutorialStep++;
+      game.nextSpawn = game.t + 700;
+      events.push({ type: 'spawn', ticket });
+    } else if (game.tutorialStep >= TUTORIAL_FIXES.length && game.tickets.length === 0) {
+      game.phase = 'over';
+      events.push({ type: 'tutorialDone' });
+    }
+    return events;
+  }
+
   // Outages: a burst of the same kind of ticket.
   const diff = difficultyFor(game.difficulty);
   if (game.t >= game.nextOutage) {
@@ -297,6 +343,20 @@ export function tick(game, dt) {
     events.push({ type: 'outage', ...outage });
     for (let i = 0; i < diff.outage.size; i++) game.pending.push({ at: game.t + 400 + i * 700, fix: outage.fix });
     game.nextOutage = game.t + lerp(diff.outage.gapMin, diff.outage.gapMax, rand(game));
+  }
+
+  // The Monday boss ticket: three fixes, in order, before the all-hands.
+  if (diff.boss && game.mode === 'shift' && !game.bossSpawned && game.t >= 70_000 && game.tickets.length < MAX_QUEUE) {
+    game.bossSpawned = true;
+    const stages = ['connect', 'restart', 'update'];
+    const ticket = {
+      id: game.nextId++, template: -2, kind: 'boss', stages, stage: 0, fix: stages[0],
+      text: 'The projector in the big room is dead. All-hands in five minutes.',
+      from: 'Everyone, floor 3', vip: false, age: 0,
+      patience: patienceFor(game.t, diff) * 2.4, selfFixAt: null, hint: true,
+    };
+    game.tickets.push(ticket);
+    events.push({ type: 'spawn', ticket });
   }
 
   // Fire drill: something is literally on fire. Double points while it burns.
@@ -342,12 +402,22 @@ export function applyFix(game, ticketId, fixId) {
   const ticket = ticketId == null ? mostUrgent(game) : game.tickets.find((t) => t.id === ticketId);
   if (!ticket) return { type: 'none' };
 
+  // A boss ticket advances one stage at a time; the last stage closes it below.
+  if (ticket.stages && ticket.stage < ticket.stages.length - 1 && ticket.fix === fixId) {
+    ticket.stage++;
+    ticket.fix = ticket.stages[ticket.stage];
+    ticket.hint = true; // show the next step
+    ticket.age = Math.max(0, ticket.age - ticket.patience * 0.2); // a little breathing room
+    return { type: 'progress', ticket, stage: ticket.stage, total: ticket.stages.length };
+  }
+
   if (ticket.fix === fixId) {
     const remaining = Math.max(0, 1 - ticket.age / ticket.patience);
     const mult = multiplier(game.streak);
     const frenzy = game.t < game.frenzyUntil;
     const kindMult = ticket.vip ? 2 : ticket.kind === 'spam' ? 1.5 : 1;
-    const points = Math.round((100 + 100 * remaining) * mult * kindMult * (frenzy ? 2 : 1) * difficultyFor(game.difficulty).scoreMult);
+    const base = ticket.stages ? 300 + 200 * remaining : 100 + 100 * remaining;
+    const points = Math.round(base * mult * kindMult * (frenzy ? 2 : 1) * difficultyFor(game.difficulty).scoreMult);
     game.tickets.splice(game.tickets.indexOf(ticket), 1);
     game.score += points;
     game.streak++;
@@ -355,7 +425,9 @@ export function applyFix(game, ticketId, fixId) {
     game.closed++;
     if (ticket.vip) game.vipsClosed++;
     if (ticket.kind === 'spam') game.spamClosed++;
+    if (ticket.kind === 'boss') game.bossesClosed++;
     game.minCloseMs = game.minCloseMs === null ? ticket.age : Math.min(game.minCloseMs, ticket.age);
+    game.totalCloseMs += ticket.age;
     let charge = false;
     if (game.streak % 10 === 0 && game.charges < 3) {
       game.charges++;
@@ -373,6 +445,8 @@ export function applyFix(game, ticketId, fixId) {
 
   game.wrong++;
   game.streak = 0;
+  game.confusions[`${fixId}>${ticket.fix}`] = (game.confusions[`${fixId}>${ticket.fix}`] || 0) + 1;
+  if (ticket.kind === 'spam') game.spamMissed++;
   ticket.hint = true;
   ticket.age = Math.min(ticket.patience - 1, ticket.age + ticket.patience * 0.25);
   return { type: 'wrong', ticket, tried: fixId };
@@ -382,11 +456,13 @@ export function summary(game) {
   const attempts = game.closed + game.wrong;
   return {
     score: game.score,
+    mode: game.mode,
     difficulty: game.difficulty,
     difficultyLabel: difficultyFor(game.difficulty).label,
     clock: clock(game.t),
     madeItToFive: game.t >= SHIFT_MS,
     closed: game.closed,
+    wrong: game.wrong,
     accuracy: attempts ? Math.round((game.closed / attempts) * 100) : 0,
     bestStreak: game.bestStreak,
     expired: game.expired,
@@ -394,12 +470,37 @@ export function summary(game) {
     vipsClosed: game.vipsClosed,
     selfFixed: game.selfFixed,
     spamClosed: game.spamClosed,
+    spamMissed: game.spamMissed,
     reopens: game.reopens,
+    bossesClosed: game.bossesClosed,
     minCloseMs: game.minCloseMs,
+    avgCloseMs: game.closed ? Math.round(game.totalCloseMs / game.closed) : null,
+    confusions: { ...game.confusions },
     inboxZeroNoon: game.inboxZeroNoon,
     overtimeMs: Math.max(0, game.t - SHIFT_MS),
     rank: rankFor(game.score),
   };
+}
+
+/** Up to three plain-English observations about the shift, for the report. */
+export function shiftInsights(s) {
+  const label = Object.fromEntries(FIXES.map((f) => [f.id, f.label]));
+  const out = [];
+  let top = null;
+  for (const [pair, n] of Object.entries(s.confusions || {})) {
+    if (!top || n > top[1]) top = [pair, n];
+  }
+  if (top && top[1] >= 2) {
+    const [tried, needed] = top[0].split('>');
+    out.push(`You reached for ${label[tried]} when the fix was ${label[needed]} — ${top[1]} times.`);
+  }
+  if (s.spamMissed >= 1) out.push(`Junk mail fooled you ${s.spamMissed === 1 ? 'once' : `${s.spamMissed} times`}. If it smells like a scam, it's Not an IT problem.`);
+  if (s.expired >= 3) out.push(`${s.expired} tickets timed out untouched. A wrong guess at least earns a hint.`);
+  if (s.overflowed >= 2) out.push('The queue overflowed. Coffee and the auto-reply exist for exactly this.');
+  if (s.bossesClosed >= 1) out.push('You fixed the projector before the all-hands. Hero.');
+  if (s.accuracy === 100 && s.closed >= 10) out.push('Not one wrong fix all shift. The help desk fears you.');
+  if (s.avgCloseMs !== null && s.avgCloseMs < 3000 && s.closed >= 10) out.push(`Average fix time ${(s.avgCloseMs / 1000).toFixed(1)}s. Lightning.`);
+  return out.slice(0, 3);
 }
 
 // --- power-ups -----------------------------------------------------------------
@@ -441,6 +542,7 @@ export const ACHIEVEMENTS = [
   { id: 'spam-hunter', label: 'Spam Hunter', desc: 'Flag 5 junk tickets in one shift', test: (s) => s.spamClosed >= 5 },
   { id: 'night-shift', label: 'Night Shift', desc: 'Work a full hour of overtime', test: (s) => s.overtimeMs >= HOUR_MS },
   { id: 'quick-draw', label: 'Quick Draw', desc: 'Close a ticket within 2 seconds', test: (s) => s.minCloseMs !== null && s.minCloseMs < 2000 },
+  { id: 'boss-fight', label: 'Boss Fight', desc: 'Fix the projector before the all-hands', test: (s) => s.bossesClosed >= 1 },
 ];
 
 /** Which achievements this shift earned. The caller keeps the lifetime set. */
