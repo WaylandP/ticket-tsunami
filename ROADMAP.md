@@ -31,11 +31,14 @@ A box gets checked only when the work is built, tested and visible in the game.
 - [x] Walk-in repairs: users carry the machine to your desk; two fixes in order, extra pay
 - [x] Art pass: illustrated animated devices (laptop, printer, phone, monitor) and generated avatars for every sender
 
+- [x] The bench: walk-ins stand in their own strip at the top of the floor, machines in hand
+- [x] Online tickets switch: emails + walk-ins, or walk-ins only (and they hurry)
+- [x] The supply closet: shifts earn IT budget (score ÷ 10), spent on permanent upgrades — coffee pot, Jules part-time, indexed wiki, ergonomic chair (never applies to the Daily)
+- [x] Big three-step machines: the beeping server rack and the haunted conference TV
+- [x] Office scenery on the floor, slowly drowned by the rising inbox
+
 ## Next
 
-- [ ] A visible repair bench: walk-ins get their own corner of the screen with the device on the desk
-- [ ] More devices and three-step hardware cases (the haunted projector deserves company)
-- [ ] An upgrade shop between shifts: spend your score on a faster wiki, a second coffee pot, an intern
 - [ ] Even more ticket variety
 - [ ] Installable as an app (PWA) and playable offline
 - [ ] Progress export/import code — move your stats between devices, still no server

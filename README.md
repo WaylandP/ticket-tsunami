@@ -39,8 +39,17 @@ swinging in overtime.
   always down, and Jules the intern usually figures it out alone. On Mondays,
   the projector dies before the all-hands — a **three-step boss ticket**.
 - Now and then someone **walks in carrying the machine** — a smoking laptop, a
-  jammed printer, a cracked phone, a monitor with no signal. Walk-in repairs
-  take two fixes in the right order, like treating a patient, and pay extra.
+  jammed printer, a cracked phone, a monitor with no signal, a beeping server
+  rack, a haunted conference TV. Walk-ins stand at **the bench** at the top of
+  the floor and take two or three fixes in the right order, like treating a
+  patient. They pay extra.
+- The **Online tickets** switch on the start screen picks your job: ON means
+  emails flood in while people walk up; OFF means walk-ins only — just you and
+  the bench, and they come fast.
+- Shifts earn **IT budget** (score ÷ 10). Spend it in the **supply closet** on
+  permanent upgrades: a second coffee pot, Jules part-time, an indexed wiki,
+  an ergonomic chair. Upgrades apply everywhere except the Daily, which stays
+  fair for everyone.
 - Every sender has a **face**: generated avatars for the whole office, custom
   looks for the regulars and the CEO, and a fish on the hook for phishing.
 - Eleven **achievements** to unlock, "notes from your manager" after every
