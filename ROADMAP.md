@@ -37,6 +37,15 @@ A box gets checked only when the work is built, tested and visible in the game.
 - [x] Big three-step machines: the beeping server rack and the haunted conference TV
 - [x] Office scenery on the floor, slowly drowned by the rising inbox
 
+## Shipped — the Internal IT redesign
+
+- [x] Full visual identity: an illustrated corporate IT office, drawn coworkers, desk and service-desk monitor (replaces the water overlay with a direct queue meter)
+- [x] Hands-on device inspection: a workbench dialog with front/rear views, numbered components and evidence-based findings for every repair stage
+- [x] Practice mode: untimed sessions with manual case progression, separate from timed records
+- [x] Question difficulty presentation: Easy / Medium / Hard / Extreme over the same engine presets
+- [x] Cyber lab: six untimed defensive investigations (phishing, MFA fatigue, USB, ransomware containment, oversharing, verified updates) with browser-local progress
+- [x] README rebuilt with real gameplay screenshots and case-accuracy notes
+
 ## Next
 
 - [ ] Even more ticket variety
