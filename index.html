@@ -60,6 +60,7 @@
     <section class="workstation" aria-label="Your workstation">
       <div class="monitor-frame">
         <div class="monitor-toolbar"><span class="monitor-led" aria-hidden="true"></span><strong>SERVICE DESK</strong><span id="inbox-status">All quiet. Suspicious.</span></div>
+        <section id="security-feed" class="security-feed" aria-label="Security incidents" hidden></section>
         <div class="inbox-tabs"><span>Inbox</span><span>Incoming requests</span></div>
         <div class="inbox-screen">
           <div class="empty" id="empty" hidden>
@@ -73,13 +74,13 @@
       <div class="desk-scene" id="desk-art" aria-hidden="true"></div>
     </section>
 
-    <div class="practice-bar" id="practice-bar" hidden><span><strong>Take your time.</strong> No countdowns or expired tickets.</span><button type="button" class="btn btn-primary" id="next-case-btn">Next case →</button><button type="button" class="btn btn-ghost" id="practice-finish-btn">Finish</button></div>
+    <div class="practice-bar" id="practice-bar" hidden><span><strong>Take your time.</strong><span id="practice-guidance">Resolve repairs and security to finish this round.</span></span><button type="button" class="btn btn-primary" id="next-case-btn">Next case →</button><button type="button" class="btn btn-ghost" id="practice-finish-btn">Finish</button></div>
 
     <section class="overlay overlay-start" id="start-screen" aria-labelledby="start-title">
       <div class="start-layout home-shell office-home">
         <header class="home-mast"><span class="home-wordmark"><span aria-hidden="true">›_</span> INTERNAL IT</span><span class="home-status">Floor 03. Everyone needs you.</span></header>
-        <div class="home-copy"><p class="eyebrow">AN IT SUPPORT SIMULATOR</p><h1 id="start-title" class="title">Ticket<br><span>Tsunami</span></h1><p class="home-lede">Small desk. Big tech energy.</p><p class="home-description">Meet your coworkers. Examine their devices.<br>Work out what went wrong.</p></div>
-        <div class="home-art-wrap"><div id="home-art"></div><p class="home-art-caption">YOUR OFFICE. YOUR PACE.</p></div>
+        <div class="home-copy"><p class="eyebrow">AN IT SUPPORT SIMULATOR</p><h1 id="start-title" class="title">Ticket<br><span>Tsunami</span></h1><p class="home-lede">Small desk. Big tech energy.</p><p class="home-description">Fix devices. Investigate security incidents.<br>Keep your coworkers working.</p></div>
+        <div class="home-art-wrap"><div id="home-art"></div><p class="home-art-caption">DEVICE REPAIRS + SECURITY RESPONSE</p></div>
         <section class="home-launch" aria-labelledby="diff-label">
           <div class="diff-wrap"><div class="setup-heading"><span>01</span><h2 id="diff-label">Question difficulty</h2></div><div class="diff" id="diff" role="group" aria-labelledby="diff-label" aria-describedby="diff-blurb"></div><p class="diff-blurb" id="diff-blurb" aria-live="polite"></p></div>
           <div class="session-wrap"><div class="setup-heading"><span>02</span><h2 id="session-label">How do you want to play?</h2></div><div class="session-choices" role="group" aria-labelledby="session-label"><button type="button" class="session-choice" data-session="practice" aria-pressed="true"><strong>Practice</strong><span>∞ No time limit</span></button><button type="button" class="session-choice" data-session="free" aria-pressed="false"><strong>Timed shift</strong><span>Keep the queue moving</span></button></div></div>
@@ -87,7 +88,7 @@
           <div class="home-launch-row"><button type="button" class="btn btn-primary" id="start-btn">Start practice <span aria-hidden="true">→</span></button><button type="button" class="btn btn-ghost" id="tutorial-btn">How to play</button></div>
           <p class="best" id="best-line" hidden></p>
         </section>
-        <footer class="home-footer"><button type="button" class="btn-link" id="daily-btn" aria-label="Daily challenge"><span class="mode-title">Daily challenge <span id="daily-date"></span></span><span id="daily-sub" class="sr-only">Same cases for everyone. One try.</span></button><button type="button" class="btn-link" id="endless-btn">Endless shift</button><button type="button" class="btn-link cyber-launch" data-security-open>Cyber lab</button><button type="button" class="btn-link" id="stats-btn">Stats</button><button type="button" class="btn-link" id="shop-btn">Upgrades</button></footer>
+        <footer class="home-footer"><button type="button" class="btn-link" id="daily-btn" aria-label="Daily challenge"><span class="mode-title">Daily challenge <span id="daily-date"></span></span><span id="daily-sub" class="sr-only">Same cases for everyone. One try.</span></button><button type="button" class="btn-link" id="endless-btn">Endless shift</button><button type="button" class="btn-link" id="stats-btn">Stats</button><button type="button" class="btn-link" id="shop-btn">Upgrades</button></footer>
       </div>
     </section>
 
@@ -120,7 +121,7 @@
         <h2 id="pause-title" class="title-sm">On a coffee break</h2>
         <p class="lede">The tickets will wait. Just this once.</p>
         <button type="button" class="btn btn-primary" id="resume-btn">Back to work</button>
-        <button type="button" class="btn btn-ghost cyber-launch" data-security-open>Cyber lab</button>
+        <button type="button" class="btn btn-ghost cyber-launch" data-security-open>Security incidents</button>
         <button type="button" class="btn btn-ghost" id="quit-btn">End shift</button>
       </div>
     </section>
@@ -138,6 +139,7 @@
           <div><dt>Timed out</dt><dd id="r-expired"></dd></div>
           <div><dt>Fixed it themselves</dt><dd id="r-self"></dd></div>
         </dl>
+        <div id="r-security" class="security-shift-report" hidden></div>
         <p class="newbest" id="r-newbest" hidden>New personal best</p>
         <p class="budget-line" id="r-budget" hidden></p>
         <ul class="insights" id="r-insights" hidden></ul>
@@ -195,8 +197,8 @@
 
 <dialog class="security-dialog" id="security-dialog" aria-labelledby="security-title">
   <div class="security-shell">
-    <header class="security-header"><div><p class="eyebrow">INTERNAL IT / DEFENSE TRAINING</p><h1 id="security-title">Security desk</h1></div><div class="security-progress-wrap"><span id="security-progress">0 / 6 cases closed</span><div class="security-progress-track" aria-hidden="true"><span id="security-progress-fill"></span></div></div><button type="button" class="icon-btn" id="security-close" aria-label="Close cybersecurity training">×</button></header>
-    <div id="security-content"></div>
+    <header class="security-header"><div><p class="eyebrow">INTERNAL IT / INCIDENT RESPONSE</p><h1 id="security-title">Security desk</h1></div><div class="security-progress-wrap"><span id="security-progress">0 / 6 cases closed</span><div class="security-progress-track" aria-hidden="true"><span id="security-progress-fill"></span></div></div><button type="button" class="icon-btn" id="security-close" aria-label="Return to the office">×</button></header>
+    <div class="security-shift-clock"><span id="security-shift-status"></span><button type="button" class="btn-link" id="security-pause">Pause shift</button></div><div id="security-content"></div>
   </div>
 </dialog>
 
